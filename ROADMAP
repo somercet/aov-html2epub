@@ -1,0 +1,25 @@
+Roadmap
+
+PRODUCTION SOFTWARE
+0.001 - Just a fork. No changes yet. CURRENT. 
+0.002 - Allows a user to set author, title and genre. 
+0.003 - Removes header from original file and replaces it with epub friendly version. 
+0.004 - Incorporates basic meta-editing for the epub. Strip incompatible html tags. 
+0.005 - Incorporates complex meta-editing for the epub. 
+0.006 - Produces epub file consistent with NOOK specifications. 
+0.007 - Convert from epub to html. 
+0.008 - Incorporate OSNS frontend to produce epub. 
+0.009 - Convert to rtf. Convert to pdf.
+1.000 - Ensure RTF complies to Wattpad specifications and upload. 
+
+CONTENT MANAGEMENT SYSTEM 
+0.001 - Uses git for multiple authorship. CURRENT. 
+0.002 - Single-author at a time html-based editor to allow online editing. Download page option. Allow image embed. Allow comments. 
+0.003 - Basic shell script to send html to the PRODUCTION SOFTWARE. Offline version available. 
+0.004 - Sync between offline/online software. Change approval permissions for admin user vs everyone else. Online epub conversion. 
+0.005 - Concurrent authors. Conflict awareness. 
+0.006 - Conflict interpretation. Grep? 
+0.007 - Auto-attach author name, if pass decency filter, to file meta-data and page footer. 
+0.008 - Chapter locking via admin permissions, multiple page support with automatic navigation. 
+0.009 - Allow html5 tags. 
+1.000 - Online rtf conversion. 

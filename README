@@ -1,6 +1,8 @@
 aov-html2epub README
 ====================
 
+This is a fork of aov-html2epub to be used as part of a backend for the Open Source Novel project.
+
 This is a minimal HTML file to EPUB format converter. After, as usual,
 being bored + frustrated by the cumbersome available tools to do this
 apparently trivial operation, this is my approach. It's just a shell
