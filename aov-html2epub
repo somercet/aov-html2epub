@@ -3,8 +3,10 @@
 # Converts an HTML file to EPUB format
 #
 # Angel Ortega <angel@triptico.com>
+# Shakna Israel <s4b3r6@gmail.com> - OSN Modifications
 #
-# Public domain
+# Public domain under GPL License
+
 
 EPUB="$1"
 shift
