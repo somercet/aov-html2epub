@@ -3,10 +3,9 @@
 # Converts an HTML file to EPUB format
 #
 # Angel Ortega <angel@triptico.com>
-# Shakna Israel <s4b3r6@gmail.com> - OSN Modifications
+# Shakna Israel <s4b3r6@gmail.com>
 #
-# Public domain under GPL License
-
+# Public domain
 
 EPUB="$1"
 shift
@@ -16,6 +15,9 @@ AUTHOR=""
 COVER=""
 HTML=""
 LANG="en"
+SUBJECT=""
+CREATOR=""
+PUBLISHER=""
 
 if [ -z "$EPUB" ] ; then
     echo "Usage: $0 {epub file} [options] {HTML file(s)}"
@@ -36,6 +38,9 @@ while [ $# -ne 0 ] ; do
     -a)         AUTHOR="$2"                     ; shift ;;
     -c)         COVER="$2"                      ; shift ;;
     -l)         LANG="$2"                       ; shift ;;
+	-s)         SUBJECT="$2"                    ; shift ;;
+	-w)         CREATOR="$2"                    ; shift ;;
+	-p)         PUBLISHER="$2"                  ; shift ;;
     *.html)     HTML="${HTML} $1"                       ;;
     *)          echo "$0: invalid argument $1" ; exit 1 ;;
     esac
@@ -89,7 +94,11 @@ echo '<metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf=
 echo "    <dc:language>${LANG}</dc:language>" >> ${O}
 echo "    <dc:title>${TITLE} - ${AUTHOR}</dc:title>" >> ${O}
 echo '    <dc:identifier id="uuid_id" opf:scheme="uuid">c5be00f9-932e-4903-8cd9-b4b5939411a6</dc:identifier>' >> ${O}
-echo "    <dc:date>2012-03-20</dc:date>" >> ${O}
+echo "    <dc:date>date+"%Y-%m-%d"</dc:date>" >> ${O}
+echo '	  <dc:subject>${SUBJECT}</dc:subject>' >> ${O}
+echo '	  <dc:creator>${CREATOR}</dc:creator>' >> ${O}
+echo '	  <dc:publisher>${PUBLISHER}</dc:publisher>' >> ${O}
+echo '	  <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>' >> ${O}
 echo '  </metadata>' >> ${O}
 echo '  <manifest>' >> ${O}
 
@@ -139,7 +148,12 @@ echo '  <navMap>' >> ${O}
 ID=1
 
 for f in ${HTML} ; do
-    echo "    <navPoint id='${f}' playOrder='${ID}'>" >> ${O}
+	cat ${O} | sed 's/<header>.*</header>//g'
+	cat ${O} | sed 's/<footer>.*</footer>//g'
+    echo "<?xml version='1.0' encoding='utf-8'?>" >> ${O}
+echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">' >> ${O}
+echo "<head><title>${TITLE} - ${AUTHOR}</title></head><body>" >> ${O}
+	echo "    <navPoint id='${f}' playOrder='${ID}'>" >> ${O}
     echo "      <navLabel><text>${ID}</text></navLabel>" >> ${O}
     echo "      <content src='${f}'/>" >> ${O}
     echo "    </navPoint>" >> ${O}
