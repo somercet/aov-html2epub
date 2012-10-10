@@ -94,10 +94,10 @@ echo '<metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf=
 echo "    <dc:language>${LANG}</dc:language>" >> ${O}
 echo "    <dc:title>${TITLE} - ${AUTHOR}</dc:title>" >> ${O}
 echo '    <dc:identifier id="uuid_id" opf:scheme="uuid">c5be00f9-932e-4903-8cd9-b4b5939411a6</dc:identifier>' >> ${O}
-echo "    <dc:date>date+"%Y-%m-%d"</dc:date>" >> ${O}
-echo '	  <dc:subject>${SUBJECT}</dc:subject>' >> ${O}
-echo '	  <dc:creator>${CREATOR}</dc:creator>' >> ${O}
-echo '	  <dc:publisher>${PUBLISHER}</dc:publisher>' >> ${O}
+echo "    <dc:date>$(date +"%Y-%m-%d")</dc:date>" >> ${O}
+echo "	  <dc:subject>${SUBJECT}</dc:subject>" >> ${O}
+echo "	  <dc:creator>${CREATOR}</dc:creator>" >> ${O}
+echo "	  <dc:publisher>${PUBLISHER}</dc:publisher>" >> ${O}
 echo '	  <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>' >> ${O}
 echo '  </metadata>' >> ${O}
 echo '  <manifest>' >> ${O}
@@ -136,7 +136,7 @@ echo "<ncx xmlns='http://www.daisy.org/z3986/2005/ncx/' version='2005-1' xml:lan
 echo '  <head>' >> ${O}
 echo '    <meta content="c5be00f9-932e-4903-8cd9-b4b5939411a6" name="dtb:uid"/>' >> ${O}
 echo '    <meta content="2" name="dtb:depth"/>' >> ${O}
-echo '    <meta content="aov-epub" name="dtb:generator"/>' >> ${O}
+echo '    <meta content="aov-html2epub" name="dtb:generator"/>' >> ${O}
 echo '    <meta content="0" name="dtb:totalPageCount"/>' >> ${O}
 echo '    <meta content="0" name="dtb:maxPageNumber"/>' >> ${O}
 echo '  </head>' >> ${O}
