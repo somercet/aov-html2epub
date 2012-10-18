@@ -18,6 +18,7 @@ LANG="en"
 SUBJECT=""
 CREATOR=""
 PUBLISHER=""
+UUID="c5be00f9-932e-4903-8cd9-b4b5939411a6"
 
 if [ -z "$EPUB" ] ; then
     echo "Usage: $0 {epub file} [options] {HTML file(s)}"
@@ -25,6 +26,9 @@ if [ -z "$EPUB" ] ; then
     echo "Options:"
     echo "-t \"title\"            Book title"
     echo "-a \"author\"           Book author"
+    echo "-s \"subject\"          Book sunject"
+    echo "-w \"creator\"          Book creator"
+    echo "-p \"publisher\"        Book publisher"
     echo "-c cover_image.png    Cover image (PNG format)"
     echo "-l lang               Language (en, es, fr...)"
     exit 1
@@ -58,6 +62,11 @@ rm -f ${EPUB}
 
 ##################################################
 
+# if the uuidgen utility is installed, generate an UUID
+if which uuidgen 2>&1 >/dev/null ; then
+    UUID="$(uuidgen)"
+fi
+
 O="titlepage.xhtml"
 > ${O}
 echo "<?xml version='1.0' encoding='utf-8'?>" >> ${O}
@@ -90,15 +99,15 @@ O=content.opf
 
 echo '<?xml version="1.0" encoding="utf-8"?>' >> ${O}
 echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">' >> ${O}
-echo '<metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/">' >> ${O}
+echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/">' >> ${O}
 echo "    <dc:language>${LANG}</dc:language>" >> ${O}
 echo "    <dc:title>${TITLE} - ${AUTHOR}</dc:title>" >> ${O}
-echo '    <dc:identifier id="uuid_id" opf:scheme="uuid">c5be00f9-932e-4903-8cd9-b4b5939411a6</dc:identifier>' >> ${O}
-echo "    <dc:date>$(date +"%Y-%m-%d")</dc:date>" >> ${O}
-echo "	  <dc:subject>${SUBJECT}</dc:subject>" >> ${O}
-echo "	  <dc:creator>${CREATOR}</dc:creator>" >> ${O}
-echo "	  <dc:publisher>${PUBLISHER}</dc:publisher>" >> ${O}
-echo '	  <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>' >> ${O}
+echo "    <dc:identifier id='uuid_id' opf:scheme='uuid'>${UUID}</dc:identifier>" >> ${O}
+echo "    <dc:date>$(date +%Y-%m-%d)</dc:date>" >> ${O}
+echo "    <dc:subject>${SUBJECT}</dc:subject>" >> ${O}
+echo "    <dc:creator>${CREATOR}</dc:creator>" >> ${O}
+echo "    <dc:publisher>${PUBLISHER}</dc:publisher>" >> ${O}
+echo '    <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>' >> ${O}
 echo '  </metadata>' >> ${O}
 echo '  <manifest>' >> ${O}
 
