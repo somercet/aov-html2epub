@@ -148,12 +148,7 @@ echo '  <navMap>' >> ${O}
 ID=1
 
 for f in ${HTML} ; do
-	cat ${O} | sed 's/<header>.*</header>//g'
-	cat ${O} | sed 's/<footer>.*</footer>//g'
-    echo "<?xml version='1.0' encoding='utf-8'?>" >> ${O}
-echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">' >> ${O}
-echo "<head><title>${TITLE} - ${AUTHOR}</title></head><body>" >> ${O}
-	echo "    <navPoint id='${f}' playOrder='${ID}'>" >> ${O}
+    echo "    <navPoint id='${f}' playOrder='${ID}'>" >> ${O}
     echo "      <navLabel><text>${ID}</text></navLabel>" >> ${O}
     echo "      <content src='${f}'/>" >> ${O}
     echo "    </navPoint>" >> ${O}
