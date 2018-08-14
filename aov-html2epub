@@ -74,16 +74,22 @@ do
     shift
 done
 
-if [ -z "$HTML" ] ; then
-    echo "$0: No HTML files; aborting" > /dev/stderr
-    exit 2
-fi
-if [ -z "$EPUB" ] ; then
-    echo "$0: No EPUB file named; aborting" > /dev/stderr
-    exit 2
-fi
-
-rm -f ${EPUB}
+{  # error checks
+    if [ -z "$HTML" ] ; then
+        echo "$0: No HTML files; aborting"
+        exit 2
+    fi
+    if [ -z "$EPUB" ] ; then
+        echo "$0: No EPUB file named; aborting"
+        exit 2
+    fi
+    if [ -w . ] ; then
+        rm -f ${EPUB}
+    else
+        echo "$0: No write permission in $PWD; aborting."
+        exit 3
+    fi
+} > /dev/stderr
 
 ##################################################
 
@@ -98,10 +104,19 @@ fi
 echo -n "application/epub+zip" > mimetype
 
 
-O="titlepage.xhtml"
-> ${O}
+mkdir -p META-INF
 
-{
+{  # write META-INF/container.xml
+echo '<?xml version="1.0"?>'
+echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+echo '   <rootfiles>'
+echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml" />'
+echo '   </rootfiles>'
+echo '</container>'
+} > META-INF/container.xml
+
+
+{  # write titlepage.xhtml
 echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'
 echo '   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'${LANG}'" lang="'${LANG}'">'
@@ -114,27 +129,10 @@ else
 fi
 
 echo '</body></html>'
-} >> ${O}
+} > titlepage.xhtml
 
 
-mkdir -p META-INF
-O="META-INF/container.xml"
-> ${O}
-
-{
-echo '<?xml version="1.0"?>'
-echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
-echo '   <rootfiles>'
-echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml" />'
-echo '   </rootfiles>'
-echo '</container>'
-} >> ${O}
-
-
-O=content.opf
->${O}
-
-{
+{  # write content.opf
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">'
 echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf"'
@@ -155,6 +153,9 @@ if [ -n "$PUBLISHER" ] ; then
 fi
 if [ -n "$TRANSLATOR" ] ; then
     echo '    <dc:contributor opf:role="trl">'${TRANSLATOR}'</dc:contributor>' >> ${O}
+fi
+if [ -r description ] ; then
+    sed -e '1 s;^;    <dc:description>;' -e '$ s;$;</dc:description>\n;' description
 fi
 
 for f in ${SUBJECT} ; do
@@ -202,13 +203,10 @@ echo '  <guide>'
 echo '    <reference href="titlepage.xhtml" type="cover" title="Cover" />'
 echo '  </guide>'
 echo '</package>'
-} >> ${O}
+} > content.opf
 
 
-O=toc.ncx
-> ${O}
-
-{
+{  # write toc.ncx
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${LANG}'">'
 echo '  <head>'
@@ -235,13 +233,13 @@ done
 
 echo '  </navMap>'
 echo '</ncx>'
-} >> ${O}
+} > toc.ncx
 
 
-FILES="META-INF titlepage.xhtml content.opf toc.ncx"
+FILES="META-INF content.opf toc.ncx titlepage.xhtml"
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -r ${FILES} ${COVER} ${CSS} ${HTML} ${IMAGE} ${TTF}
+zip ${EPUB} -X -r ${FILES} ${COVER} ${HTML} ${CSS} ${IMAGE} ${TTF}
 
 rm -rf mimetype ${FILES}
 
