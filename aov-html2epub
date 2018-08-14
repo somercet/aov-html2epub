@@ -152,7 +152,7 @@ if [ -n "$PUBLISHER" ] ; then
     echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
 fi
 if [ -n "$TRANSLATOR" ] ; then
-    echo '    <dc:contributor opf:role="trl">'${TRANSLATOR}'</dc:contributor>' >> ${O}
+    echo '    <dc:contributor opf:role="trl">'${TRANSLATOR}'</dc:contributor>'
 fi
 if [ -r description ] ; then
     sed -e '1 s;^;    <dc:description>;' -e '$ s;$;</dc:description>\n;' description
