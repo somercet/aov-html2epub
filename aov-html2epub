@@ -8,37 +8,37 @@
 #
 # Public domain
 
-EPUB="$1"
-shift
-
+EPUB=""
 TITLE=""
 AUTHOR=""
 COVER=""
 HTML=""
 CSS=""
+IMAGE=""
 LANG="en"
 SUBJECT=""
 CREATOR=""
 PUBLISHER=""
 UUID="c5be00f9-932e-4903-8cd9-b4b5939411a6"
 
-if [ -z "$EPUB" ] ; then
-    echo "Usage: $0 {epub file} [options] {HTML file(s)}"
-    echo
-    echo "Options:"
-    echo "-t \"title\"            Book title"
-    echo "-a \"author\"           Book author"
-    echo "-s \"subject\"          Book sunject"
-    echo "-w \"creator\"          Book creator"
-    echo "-p \"publisher\"        Book publisher"
-    echo "-c cover_image.png    Cover image (PNG format)"
-    echo "-l lang               Language (en, es, fr...)"
-    exit 1
-fi
+usage () {
+    cat << EOM >> /dev/stderr
+Usage: $( basename $0 ) [EPUB FILE] [OPTION]... [FILE]...
+
+Options:
+ -t title            Book title
+ -a author           Book author
+ -s subject          Book sunject
+ -w creator          Book creator
+ -p publisher        Book publisher
+ -c cover.img        Cover image
+ -l lang             Language (en, es, fr...)
+EOM
+}
 
 # parse arguments
-while [ $# -ne 0 ] ; do
-
+while [ $# -ne 0 ]
+do
     case $1 in
     -t)         TITLE="$2"                      ; shift ;;
     -a)         AUTHOR="$2"                     ; shift ;;
@@ -47,18 +47,25 @@ while [ $# -ne 0 ] ; do
     -s)         SUBJECT="$2"                    ; shift ;;
     -w)         CREATOR="$2"                    ; shift ;;
     -p)         PUBLISHER="$2"                  ; shift ;;
+    *.jpg | *.png | *.gif)
+                IMAGE="${IMAGE} $1"                     ;;
     *.css)      CSS="${CSS} $1"                         ;;
-    *.xhtml)    HTML="${HTML} $1"                       ;;
-    *.html)     HTML="${HTML} $1"                       ;;
-    *)          echo "$0: invalid argument $1" ; exit 1 ;;
+    *.xhtml | *.html)
+                HTML="${HTML} $1"                       ;;
+    *.epub)     EPUB="$1"                               ;;
+    *)          echo "$0: invalid argument $1" > /dev/stderr
+                     usage
+                     exit 1 ;;
     esac
-
     shift
-
 done
 
 if [ -z "$HTML" ] ; then
-    echo "$0: No HTML files; aborting"
+    echo "$0: No HTML files; aborting" > /dev/stderr
+    exit 2
+fi
+if [ -z "$EPUB" ] ; then
+    echo "$0: No EPUB file named; aborting" > /dev/stderr
     exit 2
 fi
 
@@ -77,8 +84,8 @@ O="titlepage.xhtml"
 > ${O}
 
 {
-echo "<?xml version='1.0' encoding='utf-8'?>"
-echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">'
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'${LANG}'" lang="'${LANG}'">'
 echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
 
 if [ ! -z "${COVER}" ] ; then
@@ -93,7 +100,7 @@ echo '</body></html>'
 
 mkdir -p META-INF
 O="META-INF/container.xml"
-> ${O}
+>> ${O}
 
 {
 echo '<?xml version="1.0"?>'
@@ -111,20 +118,20 @@ O=content.opf
 {
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">'
-echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/">'
-echo "    <dc:language>${LANG}</dc:language>"
-echo "    <dc:title>${TITLE} - ${AUTHOR}</dc:title>"
-echo "    <dc:identifier id='uuid_id' opf:scheme='uuid'>${UUID}</dc:identifier>"
-echo "    <dc:date>$(date +%Y-%m-%d)</dc:date>"
-echo "    <dc:subject>${SUBJECT}</dc:subject>"
-echo "    <dc:creator>${CREATOR}</dc:creator>"
-echo "    <dc:publisher>${PUBLISHER}</dc:publisher>"
+echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">'
+echo '    <dc:language>'${LANG}'</dc:language>'
+echo '    <dc:title>'${TITLE} - ${AUTHOR}'</dc:title>'
+echo '    <dc:identifier id="uuid_id" opf:scheme="uuid">'${UUID}'</dc:identifier>'
+echo '    <dc:date>'$( date +%Y-%m-%d )'</dc:date>'
+echo '    <dc:subject>'${SUBJECT}'</dc:subject>'
+echo '    <dc:creator>'${CREATOR}'</dc:creator>'
+echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
 echo '    <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>'
 echo '  </metadata>'
 echo '  <manifest>'
 
 if [ ! -z "$COVER" ] ; then
-    echo '    <item href="'${COVER}'" id="cover" media-type="image/png" />'
+    echo '    <item href="'${COVER}'" id="cover" media-type="'$( file -b --mime-type ${COVER} )'" />'
 fi
 
 echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
@@ -137,13 +144,15 @@ for f in ${CSS} ; do
     echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="text/css" />'
 done
 
+for f in ${IMAGE} ; do
+    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="'$( file -b --mime-type ${f} )'" />'
+done
+
 echo '    <item href="toc.ncx" media-type="application/x-dtbncx+xml" id="ncx" />'
 echo '  </manifest>'
 echo '  <spine toc="ncx">'
 
-echo '    <itemref idref="'titlepage.xhtml'" />'
-
-for f in ${HTML} ; do
+for f in titlepage.xhtml ${HTML} ; do
     echo '    <itemref idref="'$( basename ${f} )'" />'
 done
 
@@ -174,7 +183,7 @@ echo '  </docTitle>'
 echo '  <navMap>'
 
 ID=1
-for f in ${HTML} ; do
+for f in titlepage.xhtml ${HTML} ; do
     echo '    <navPoint id="'$( basename ${f} )'" playOrder="'${ID}'">'
     echo '      <navLabel><text>'${ID}'</text></navLabel>'
     echo '      <content src="'${f}'" />'
@@ -191,8 +200,9 @@ echo '</ncx>'
 FILES="META-INF titlepage.xhtml content.opf toc.ncx"
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -r ${FILES} ${COVER} ${CSS} ${HTML}
+zip ${EPUB} -X -r ${FILES} ${COVER} ${CSS} ${HTML} ${IMAGE}
 
 rm -rf mimetype ${FILES}
 
 exit 0
+
