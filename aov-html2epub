@@ -121,8 +121,9 @@ echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'
 echo '   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'${LANG}'" lang="'${LANG}'">'
 echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
+echo '<!-- TTITLE Cover -->'
 
-if [ ! -z "${COVER}" ] ; then
+if [ -n "$COVER" ] ; then
     echo '<div><img src="'${COVER}'" alt="cover image" /></div>'
 else
     echo '<h1>'${TITLE}'</h1><h2>'${AUTHOR}'</h2>'
@@ -168,7 +169,7 @@ echo '    <dc:date>'$( date +%Y-%m-%d )'</dc:date>'
 echo '  </metadata>'
 echo '  <manifest>'
 
-if [ ! -z "$COVER" ] ; then
+if [ -n "$COVER" ] ; then
     echo '    <item href="'${COVER}'" id="cover" media-type="'$( file -b --mime-type ${COVER} )'" />'
 fi
 
@@ -217,14 +218,22 @@ echo '    <meta content="0" name="dtb:totalPageCount" />'
 echo '    <meta content="0" name="dtb:maxPageNumber" />'
 echo '  </head>'
 echo '  <docTitle>'
-echo '    <text>'${TITLE} - ${AUTHOR}'</text>'
+echo '    <text>'${TITLE}'</text>'
 echo '  </docTitle>'
+echo '  <docAuthor>'
+echo '    <text>'${AUTHOR}'</text>'
+echo '  </docAuthor>'
 echo '  <navMap>'
 
 ID=1
 for f in titlepage.xhtml ${HTML} ; do
+    title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE *//' -e 's/ *-->//p }' $f )
+    if [ -z "$title" ] ; then
+        title=$ID
+    fi
+
     echo '    <navPoint id="'$( basename ${f} )'" playOrder="'${ID}'">'
-    echo '      <navLabel><text>'${ID}'</text></navLabel>'
+    echo '      <navLabel><text>'${title}'</text></navLabel>'
     echo '      <content src="'${f}'" />'
     echo '    </navPoint>'
 
