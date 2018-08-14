@@ -97,11 +97,11 @@ fi
 
 echo -n "application/epub+zip" > mimetype
 
+
 O="titlepage.xhtml"
 > ${O}
 
 {
-
 echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'
 echo '   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'${LANG}'" lang="'${LANG}'">'
@@ -119,7 +119,7 @@ echo '</body></html>'
 
 mkdir -p META-INF
 O="META-INF/container.xml"
->> ${O}
+> ${O}
 
 {
 echo '<?xml version="1.0"?>'
@@ -142,10 +142,10 @@ echo '            xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://pur
 echo '    <dc:language>'${LANG}'</dc:language>'
 echo '    <dc:title>'${TITLE}'</dc:title>'
 
-if [ -z "$FILEAS" ] ; then
-    echo '    <dc:creator opf:role="aut">'${AUTHOR}'</dc:creator>'
-else
+if [ -n "$FILEAS" ] ; then
     echo '    <dc:creator opf:role="aut" opf:file-as="'${FILEAS}'">'${AUTHOR}'</dc:creator>'
+else
+    echo '    <dc:creator opf:role="aut">'${AUTHOR}'</dc:creator>'
 fi
 if [ -n "$CREATOR" ] ; then
     echo '    <dc:contributor opf:role="bkp">'${CREATOR}'</dc:contributor>'
