@@ -11,28 +11,36 @@
 EPUB=""
 TITLE=""
 AUTHOR=""
+FILEAS=""
 COVER=""
 HTML=""
 CSS=""
+TTF=""
 IMAGE=""
 LANG="en"
 SUBJECT=""
 CREATOR=""
+TRANSLATOR=""
 PUBLISHER=""
-UUID="c5be00f9-932e-4903-8cd9-b4b5939411a6"
+LICENSE="none"
+UUID=""
 
 usage () {
     cat << EOM >> /dev/stderr
 Usage: $( basename $0 ) [EPUB FILE] [OPTION]... [FILE]...
 
 Options:
- -t title            Book title
- -a author           Book author
- -s subject          Book sunject
- -w creator          Book creator
- -p publisher        Book publisher
+ -t title            Title
+ -a author           Author 'First Last'
+ -f file-as          Author 'Last, First'
+ -s subject          Subject(s)
+ -p creator          Creator
+ -p publisher        Publisher
+ -T translator       If any
  -c cover.img        Cover image
- -l lang             Language (en, es, fr...)
+ -l lang             Language (ISO 639, default "en")
+ -L licence          Default "none"
+ -u UUID             Universal Unique ID
 EOM
 }
 
@@ -42,17 +50,23 @@ do
     case $1 in
     -t)         TITLE="$2"                      ; shift ;;
     -a)         AUTHOR="$2"                     ; shift ;;
+    -f)         FILEAS="$2"                     ; shift ;;
     -c)         COVER="$2"                      ; shift ;;
     -l)         LANG="$2"                       ; shift ;;
     -s)         SUBJECT="$2"                    ; shift ;;
-    -w)         CREATOR="$2"                    ; shift ;;
-    -p)         PUBLISHER="$2"                  ; shift ;;
-    *.jpg | *.png | *.gif)
-                IMAGE="${IMAGE} $1"                     ;;
+    -p)         CREATOR="$2"                    ; shift ;;
+    -P)         PUBLISHER="$2"                  ; shift ;;
+    -T)         TRANSLATOR="$2"                 ; shift ;;
+    -u)         UUID="$2"                       ; shift ;;
+    -L)         LICENSE="$2"                    ; shift ;;
+    *.epub)     EPUB="$1"                               ;;
     *.css)      CSS="${CSS} $1"                         ;;
     *.xhtml | *.html)
                 HTML="${HTML} $1"                       ;;
-    *.epub)     EPUB="$1"                               ;;
+    *.jpg | *.png | *.gif)
+                IMAGE="${IMAGE} $1"                     ;;
+    *.ttf | *.woff)
+                TTF="${TTF} $1"                         ;;
     *)          echo "$0: invalid argument $1" > /dev/stderr
                      usage
                      exit 1 ;;
@@ -73,9 +87,12 @@ rm -f ${EPUB}
 
 ##################################################
 
-# if the uuidgen utility is installed, generate an UUID
-if which uuidgen 2>&1 >/dev/null ; then
-    UUID="$(uuidgen)"
+if [ -z "$UUID" ] ; then
+    if which uuidgen 2>&1 >/dev/null ; then
+        UUID="$(uuidgen)"
+    else
+        UUID="c5be00f9-932e-4903-8cd9-b4b5939411a6"
+    fi
 fi
 
 echo -n "application/epub+zip" > mimetype
@@ -84,7 +101,9 @@ O="titlepage.xhtml"
 > ${O}
 
 {
-echo '<?xml version="1.0" encoding="utf-8"?>'
+
+echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'
+echo '   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'${LANG}'" lang="'${LANG}'">'
 echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
 
@@ -118,15 +137,33 @@ O=content.opf
 {
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">'
-echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">'
+echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf"'
+echo '            xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">'
 echo '    <dc:language>'${LANG}'</dc:language>'
-echo '    <dc:title>'${TITLE} - ${AUTHOR}'</dc:title>'
+echo '    <dc:title>'${TITLE}'</dc:title>'
+
+if [ -z "$FILEAS" ] ; then
+    echo '    <dc:creator opf:role="aut">'${AUTHOR}'</dc:creator>'
+else
+    echo '    <dc:creator opf:role="aut" opf:file-as="'${FILEAS}'">'${AUTHOR}'</dc:creator>'
+fi
+if [ -n "$CREATOR" ] ; then
+    echo '    <dc:contributor opf:role="bkp">'${CREATOR}'</dc:contributor>'
+fi
+if [ -n "$PUBLISHER" ] ; then
+    echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
+fi
+if [ -n "$TRANSLATOR" ] ; then
+    echo '    <dc:contributor opf:role="trl">'${TRANSLATOR}'</dc:contributor>' >> ${O}
+fi
+
+for f in ${SUBJECT} ; do
+    echo '    <dc:subject>'${SUBJECT}'</dc:subject>'
+done
+
 echo '    <dc:identifier id="uuid_id" opf:scheme="uuid">'${UUID}'</dc:identifier>'
+echo '    <dc:rights>'${LICENSE}'</dc:rights>'
 echo '    <dc:date>'$( date +%Y-%m-%d )'</dc:date>'
-echo '    <dc:subject>'${SUBJECT}'</dc:subject>'
-echo '    <dc:creator>'${CREATOR}'</dc:creator>'
-echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
-echo '    <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>'
 echo '  </metadata>'
 echo '  <manifest>'
 
@@ -146,6 +183,10 @@ done
 
 for f in ${IMAGE} ; do
     echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="'$( file -b --mime-type ${f} )'" />'
+done
+
+for f in ${TTF} ; do
+    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="application/octet-stream" />'
 done
 
 echo '    <item href="toc.ncx" media-type="application/x-dtbncx+xml" id="ncx" />'
@@ -200,7 +241,7 @@ echo '</ncx>'
 FILES="META-INF titlepage.xhtml content.opf toc.ncx"
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -r ${FILES} ${COVER} ${CSS} ${HTML} ${IMAGE}
+zip ${EPUB} -X -r ${FILES} ${COVER} ${CSS} ${HTML} ${IMAGE} ${TTF}
 
 rm -rf mimetype ${FILES}
 
