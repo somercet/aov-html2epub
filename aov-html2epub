@@ -2,6 +2,7 @@
 
 # Converts an HTML file to EPUB format
 #
+# Peter Buxton <somercet@gmail.com>
 # Angel Ortega <angel@triptico.com>
 # Shakna Israel <s4b3r6@gmail.com>
 #
@@ -14,6 +15,7 @@ TITLE=""
 AUTHOR=""
 COVER=""
 HTML=""
+CSS=""
 LANG="en"
 SUBJECT=""
 CREATOR=""
@@ -42,9 +44,11 @@ while [ $# -ne 0 ] ; do
     -a)         AUTHOR="$2"                     ; shift ;;
     -c)         COVER="$2"                      ; shift ;;
     -l)         LANG="$2"                       ; shift ;;
-	-s)         SUBJECT="$2"                    ; shift ;;
-	-w)         CREATOR="$2"                    ; shift ;;
-	-p)         PUBLISHER="$2"                  ; shift ;;
+    -s)         SUBJECT="$2"                    ; shift ;;
+    -w)         CREATOR="$2"                    ; shift ;;
+    -p)         PUBLISHER="$2"                  ; shift ;;
+    *.css)      CSS="${CSS} $1"                         ;;
+    *.xhtml)    HTML="${HTML} $1"                       ;;
     *.html)     HTML="${HTML} $1"                       ;;
     *)          echo "$0: invalid argument $1" ; exit 1 ;;
     esac
@@ -67,111 +71,127 @@ if which uuidgen 2>&1 >/dev/null ; then
     UUID="$(uuidgen)"
 fi
 
+echo -n "application/epub+zip" > mimetype
+
 O="titlepage.xhtml"
 > ${O}
-echo "<?xml version='1.0' encoding='utf-8'?>" >> ${O}
-echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">' >> ${O}
-echo "<head><title>${TITLE} - ${AUTHOR}</title></head><body>" >> ${O}
+
+{
+echo "<?xml version='1.0' encoding='utf-8'?>"
+echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">'
+echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
 
 if [ ! -z "${COVER}" ] ; then
-    echo "<img src='${COVER}'/>" >> ${O}
+    echo '<div><img src="'${COVER}'" alt="cover image" /></div>'
 else
-    echo "<h1>$TITLE</h1><h2>$AUTHOR</h2>" >> ${O}
+    echo '<h1>'${TITLE}'</h1><h2>'${AUTHOR}'</h2>'
 fi
 
-echo "</body></html>" >> ${O}
+echo '</body></html>'
+} >> ${O}
+
 
 mkdir -p META-INF
 O="META-INF/container.xml"
-
 > ${O}
-echo '<?xml version="1.0"?>' >> ${O}
-echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' >> ${O}
-echo '   <rootfiles>' >> ${O}
-echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>' >> ${O}
-echo '   </rootfiles>' >> ${O}
-echo '</container>' >> ${O}
 
-echo -n "application/epub+zip" > mimetype
+{
+echo '<?xml version="1.0"?>'
+echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+echo '   <rootfiles>'
+echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml" />'
+echo '   </rootfiles>'
+echo '</container>'
+} >> ${O}
+
 
 O=content.opf
 >${O}
 
-echo '<?xml version="1.0" encoding="utf-8"?>' >> ${O}
-echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">' >> ${O}
-echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/">' >> ${O}
-echo "    <dc:language>${LANG}</dc:language>" >> ${O}
-echo "    <dc:title>${TITLE} - ${AUTHOR}</dc:title>" >> ${O}
-echo "    <dc:identifier id='uuid_id' opf:scheme='uuid'>${UUID}</dc:identifier>" >> ${O}
-echo "    <dc:date>$(date +%Y-%m-%d)</dc:date>" >> ${O}
-echo "    <dc:subject>${SUBJECT}</dc:subject>" >> ${O}
-echo "    <dc:creator>${CREATOR}</dc:creator>" >> ${O}
-echo "    <dc:publisher>${PUBLISHER}</dc:publisher>" >> ${O}
-echo '    <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>' >> ${O}
-echo '  </metadata>' >> ${O}
-echo '  <manifest>' >> ${O}
+{
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">'
+echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/">'
+echo "    <dc:language>${LANG}</dc:language>"
+echo "    <dc:title>${TITLE} - ${AUTHOR}</dc:title>"
+echo "    <dc:identifier id='uuid_id' opf:scheme='uuid'>${UUID}</dc:identifier>"
+echo "    <dc:date>$(date +%Y-%m-%d)</dc:date>"
+echo "    <dc:subject>${SUBJECT}</dc:subject>"
+echo "    <dc:creator>${CREATOR}</dc:creator>"
+echo "    <dc:publisher>${PUBLISHER}</dc:publisher>"
+echo '    <dc:rights>Creative Commons BY-SA 3.0 License.</dc:rights>'
+echo '  </metadata>'
+echo '  <manifest>'
 
 if [ ! -z "$COVER" ] ; then
-    echo "    <item href='${COVER}' id='cover' media-type='image/png'/>" >> ${O}
+    echo '    <item href="'${COVER}'" id="cover" media-type="image/png" />'
 fi
 
-echo "    <item href='titlepage.xhtml' id='titlepage.xhtml' media-type='application/xhtml+xml'/>" >> ${O}
+echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
 
 for f in ${HTML} ; do
-    echo "    <item href='${f}' id='${f}' media-type='application/xhtml+xml'/>" >> ${O}
+    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="application/xhtml+xml" />'
 done
 
-echo '    <item href="toc.ncx" media-type="application/x-dtbncx+xml" id="ncx"/>' >> ${O}
-echo '  </manifest>' >> ${O}
-echo '  <spine toc="ncx">' >> ${O}
+for f in ${CSS} ; do
+    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="text/css" />'
+done
 
-echo "    <itemref idref='titlepage.xhtml'/>" >> ${O}
+echo '    <item href="toc.ncx" media-type="application/x-dtbncx+xml" id="ncx" />'
+echo '  </manifest>'
+echo '  <spine toc="ncx">'
+
+echo '    <itemref idref="'titlepage.xhtml'" />'
 
 for f in ${HTML} ; do
-    echo "    <itemref idref='${f}'/>" >> ${O}
+    echo '    <itemref idref="'$( basename ${f} )'" />'
 done
 
-echo '  </spine>' >> ${O}
-echo '  <guide>' >> ${O}
-echo '    <reference href="titlepage.xhtml" type="cover" title="Cover"/>' >> ${O}
-echo '  </guide>' >> ${O}
-echo '</package>' >> ${O}
+echo '  </spine>'
+echo '  <guide>'
+echo '    <reference href="titlepage.xhtml" type="cover" title="Cover" />'
+echo '  </guide>'
+echo '</package>'
+} >> ${O}
+
 
 O=toc.ncx
 > ${O}
 
-echo '<?xml version="1.0" encoding="utf-8"?>' >> ${O}
-echo "<ncx xmlns='http://www.daisy.org/z3986/2005/ncx/' version='2005-1' xml:lang='${LANG}'>" >> ${O}
-echo '  <head>' >> ${O}
-echo "    <meta content='${UUID}' name='dtb:uid'/>" >> ${O}
-echo '    <meta content="2" name="dtb:depth"/>' >> ${O}
-echo '    <meta content="aov-html2epub" name="dtb:generator"/>' >> ${O}
-echo '    <meta content="0" name="dtb:totalPageCount"/>' >> ${O}
-echo '    <meta content="0" name="dtb:maxPageNumber"/>' >> ${O}
-echo '  </head>' >> ${O}
-echo '  <docTitle>' >> ${O}
-echo "    <text>$TITLE - $AUTHOR</text>" >> ${O}
-echo '  </docTitle>' >> ${O}
-echo '  <navMap>' >> ${O}
+{
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${LANG}'">'
+echo '  <head>'
+echo '    <meta content="'${UUID}'" name="dtb:ui" />'
+echo '    <meta content="2" name="dtb:depth" />'
+echo '    <meta content="aov-html2epub" name="dtb:generator" />'
+echo '    <meta content="0" name="dtb:totalPageCount" />'
+echo '    <meta content="0" name="dtb:maxPageNumber" />'
+echo '  </head>'
+echo '  <docTitle>'
+echo '    <text>'${TITLE} - ${AUTHOR}'</text>'
+echo '  </docTitle>'
+echo '  <navMap>'
 
 ID=1
-
 for f in ${HTML} ; do
-    echo "    <navPoint id='${f}' playOrder='${ID}'>" >> ${O}
-    echo "      <navLabel><text>${ID}</text></navLabel>" >> ${O}
-    echo "      <content src='${f}'/>" >> ${O}
-    echo "    </navPoint>" >> ${O}
+    echo '    <navPoint id="'$( basename ${f} )'" playOrder="'${ID}'">'
+    echo '      <navLabel><text>'${ID}'</text></navLabel>'
+    echo '      <content src="'${f}'" />'
+    echo '    </navPoint>'
 
-    ID=$(($ID + 1))
+    let ID++
 done
 
-echo '  </navMap>' >> ${O}
-echo '</ncx>' >> ${O}
+echo '  </navMap>'
+echo '</ncx>'
+} >> ${O}
+
 
 FILES="META-INF titlepage.xhtml content.opf toc.ncx"
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -r ${FILES} ${COVER} ${HTML}
+zip ${EPUB} -X -r ${FILES} ${COVER} ${CSS} ${HTML}
 
 rm -rf mimetype ${FILES}
 
