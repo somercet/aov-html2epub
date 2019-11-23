@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Converts an HTML file to EPUB format
+# Converts an HTML file to EPUB 3.0 format
 #
 # Peter Buxton <somercet@gmail.com>
 # Angel Ortega <angel@triptico.com>
@@ -17,7 +17,7 @@ HTML=""
 CSS=""
 TTF=""
 IMAGE=""
-LANG="en"
+LANG="en-US"
 SUBJECT=""
 CREATOR=""
 TRANSLATOR=""
@@ -25,12 +25,14 @@ PUBLISHER=""
 LICENSE="none"
 UUID=""
 
+TP=1
+
 usage () {
     cat << EOM >> /dev/stderr
 Usage: $( basename $0 ) [EPUB FILE] [OPTION]... [FILE]...
 
 Options:
- -t title            Title
+ -t title            Title *required*
  -a author           Author 'First Last'
  -f file-as          Author 'Last, First'
  -s subject          Subject(s)
@@ -38,14 +40,14 @@ Options:
  -p publisher        Publisher
  -T translator       If any
  -c cover.img        Cover image
- -l lang             Language (ISO 639, default "en")
+ -l lang             Language (RFC 4646, default "en-US")
  -L licence          Default "none"
  -u UUID             Universal Unique ID
 EOM
 }
 
 # parse arguments
-while [ $# -ne 0 ]
+while [[ $# -ne 0 ]]
 do
     case $1 in
     -t)         TITLE="$2"                      ; shift ;;
@@ -75,15 +77,13 @@ do
 done
 
 {  # error checks
-    if [ -z "$HTML" ] ; then
+    if [[ -z "$HTML" ]] ; then
         echo "$0: No HTML files; aborting"
         exit 2
-    fi
-    if [ -z "$EPUB" ] ; then
+    elif [[ -z "$EPUB" ]] ; then
         echo "$0: No EPUB file named; aborting"
         exit 2
-    fi
-    if [ -w . ] ; then
+    elif [[ -w . ]] ; then
         rm -f ${EPUB}
     else
         echo "$0: No write permission in $PWD; aborting."
@@ -93,7 +93,7 @@ done
 
 ##################################################
 
-if [ -z "$UUID" ] ; then
+if [[ -z "$UUID" ]] ; then
     if which uuidgen 2>&1 >/dev/null ; then
         UUID="$(uuidgen)"
     else
@@ -107,107 +107,124 @@ echo -n "application/epub+zip" > mimetype
 mkdir -p META-INF
 
 {  # write META-INF/container.xml
-echo '<?xml version="1.0"?>'
-echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
-echo '   <rootfiles>'
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '  <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+echo '    <rootfiles>'
 echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml" />'
-echo '   </rootfiles>'
-echo '</container>'
+echo '    </rootfiles>'
+echo '  </container>'
+#echo '      <rootfile full-path="OPS/package.opf" media-type="application/oebps-package+xml"/>'
 } > META-INF/container.xml
 
 
-{  # write titlepage.xhtml
-echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'
-echo '   "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
-echo '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'${LANG}'" lang="'${LANG}'">'
-echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
-echo '<!-- TTITLE Cover -->'
-
-if [ -n "$COVER" ] ; then
-    echo '<div><img src="'${COVER}'" alt="cover image" /></div>'
+# write titlepage.xhtml
+if [[ -r titlepage.xhtml ]] ; then
+	TP=0
 else
-    echo '<h1>'${TITLE}'</h1><h2>'${AUTHOR}'</h2>'
-fi
+	{
+	echo '<!DOCTYPE html>'
+	echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${LANG}'">'
+	echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
+	echo '<!-- TTITLE Cover -->'
 
-echo '</body></html>'
-} > titlepage.xhtml
+	if [[ -n "$COVER" ]] ; then
+	    echo '<div style="text-align: center;"><img src="'${COVER}'" alt="'${TITLE} by ${AUTHOR}'" /></div>'
+	else
+	    echo '<h1>'${TITLE}'</h1><h2>'${AUTHOR}'</h2>'
+	fi
+
+	echo '</body></html>'
+	} > titlepage.xhtml
+fi
 
 
 {  # write content.opf
 echo '<?xml version="1.0" encoding="utf-8"?>'
-echo '<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uuid_id">'
-echo '  <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:opf="http://www.idpf.org/2007/opf"'
-echo '            xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">'
-echo '    <dc:language>'${LANG}'</dc:language>'
-echo '    <dc:title>'${TITLE}'</dc:title>'
+echo '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uuid_id">'
+echo '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
 
-if [ -n "$FILEAS" ] ; then
-    echo '    <dc:creator opf:role="aut" opf:file-as="'${FILEAS}'">'${AUTHOR}'</dc:creator>'
-else
-    echo '    <dc:creator opf:role="aut">'${AUTHOR}'</dc:creator>'
+# REQUIRED
+echo '    <dc:title>'${TITLE}'</dc:title>'
+echo '    <dc:language>'${LANG}'</dc:language>'
+echo '    <dc:identifier id="uuid_id">'${UUID}'</dc:identifier>'
+
+f=$( date -Iseconds -u | sed 's/+00:00/Z/' )
+echo '    <dc:date>'${f/-*/}'</dc:date>'
+echo '    <meta property="dcterms:modified">'${f}'</meta>'
+echo '    <dc:rights>'${LICENSE}'</dc:rights>'
+
+if [[ -n "$AUTHOR" ]] ; then
+    echo '    <dc:creator id="author">'${AUTHOR}'</dc:creator>'
+    echo '    <meta refines="#author" property="role" scheme="marc:relators">aut</meta>'
+    if [ -n "$FILEAS" ] ; then
+        echo '    <meta refines="#author" property="file-as">'${FILEAS}'</meta>'
+    fi
 fi
-if [ -n "$CREATOR" ] ; then
-    echo '    <dc:contributor opf:role="bkp">'${CREATOR}'</dc:contributor>'
+if [[ -n "$TRANSLATOR" ]] ; then
+    echo '    <dc:contributor id="translator">'${TRANSLATOR}'</dc:contributor>'
+    echo '    <meta refines="#translator" property="role" scheme="marc:relators">trl</meta>'
 fi
-if [ -n "$PUBLISHER" ] ; then
+if [[ -n "$PUBLISHER" ]] ; then
     echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
 fi
-if [ -n "$TRANSLATOR" ] ; then
-    echo '    <dc:contributor opf:role="trl">'${TRANSLATOR}'</dc:contributor>'
+if [[ -n "$CREATOR" ]] ; then
+    echo '    <dc:contributor id="creator">'${CREATOR}'</dc:contributor>'
+    echo '    <meta refines="#creator" property="role" scheme="marc:relators">bkp</meta>'
 fi
-if [ -r description ] ; then
+if [[ -r description ]] ; then
     sed -e '1 s;^;    <dc:description>;' -e '$ s;$;</dc:description>\n;' description
 fi
-
 for f in ${SUBJECT} ; do
     echo '    <dc:subject>'${f}'</dc:subject>'
 done
 
-echo '    <dc:identifier id="uuid_id" opf:scheme="uuid">'${UUID}'</dc:identifier>'
-echo '    <dc:rights>'${LICENSE}'</dc:rights>'
-echo '    <dc:date>'$( date +%Y-%m-%d )'</dc:date>'
+#echo '    <meta content="aov-html2epub" name="dtb:generator" />'
+
 echo '  </metadata>'
 echo '  <manifest>'
 
-if [ -n "$COVER" ] ; then
-    echo '    <item href="'${COVER}'" id="cover" media-type="'$( file -b --mime-type ${COVER} )'" />'
+if [[ -n "$COVER" ]] ; then
+    echo '    <item href="'${COVER}'" id="cover" properties="cover-image" media-type="'$( file -b --mime-type ${COVER} )'" />'
 fi
 
 echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
 
 for f in ${HTML} ; do
-    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="application/xhtml+xml" />'
+    echo '    <item href="'${f}'" id="'${f/*\//}'" media-type="application/xhtml+xml" />'
 done
 
 for f in ${CSS} ; do
-    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="text/css" />'
+    echo '    <item href="'${f}'" id="'${f/*\//}'" media-type="text/css" />'
 done
 
 for f in ${IMAGE} ; do
-    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="'$( file -b --mime-type ${f} )'" />'
+    echo '    <item href="'${f}'" id="'${f/*\//}'" media-type="'$( file -b --mime-type ${f} )'" />'
 done
 
 for f in ${TTF} ; do
-    echo '    <item href="'${f}'" id="'$( basename ${f} )'" media-type="application/octet-stream" />'
+    echo '    <item href="'${f}'" id="'${f/*\//}'" media-type="application/octet-stream" />'
 done
 
-echo '    <item href="toc.ncx" media-type="application/x-dtbncx+xml" id="ncx" />'
+echo '    <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml" />'
+echo '    <item href="toc.xhtml" id="toc" properties="nav" media-type="application/xhtml+xml" />'
 echo '  </manifest>'
 echo '  <spine toc="ncx">'
 
 for f in titlepage.xhtml ${HTML} ; do
-    echo '    <itemref idref="'$( basename ${f} )'" />'
+    echo '    <itemref idref="'${f/*\//}'" />'
 done
 
 echo '  </spine>'
 echo '  <guide>'
-echo '    <reference href="titlepage.xhtml" type="cover" title="Cover" />'
+#if [[ -n "$COVER" ]] ; then
+#	echo '    <reference href="'${COVER}'" type="cover" title="Cover" />'
+#fi
+echo '    <reference href="titlepage.xhtml" type="title-page" title="Title page" />'
 echo '  </guide>'
 echo '</package>'
 } > content.opf
 
-
-{  # write toc.ncx
+{  # write DEPRECATED EPUB2 toc.ncx
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${LANG}'">'
 echo '  <head>'
@@ -228,7 +245,7 @@ echo '  <navMap>'
 ID=1
 for f in titlepage.xhtml ${HTML} ; do
     title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE *//' -e 's/ *-->//p }' $f )
-    if [ -z "$title" ] ; then
+    if [[ -z "$title" ]] ; then
         title=$ID
     fi
 
@@ -245,12 +262,53 @@ echo '</ncx>'
 } > toc.ncx
 
 
-FILES="META-INF content.opf toc.ncx titlepage.xhtml"
+{  # write NAV toc.xhtml
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
+echo '  xml:lang="'${LANG}'" lang="'${LANG}'">'
+echo '<head>'
+echo '  <title>'${TITLE}'</title>'
+for f in ${CSS} ; do
+    echo '  <link rel="stylesheet" href="'${f}'" type="text/css" />'
+done
+echo '  <meta charset="utf-8" />'
+echo '</head>'
+echo '<body>'
+echo '  <section class="toc" epub:type="toc">'
+echo '    <header>'
+echo '      <h1>Contents</h1>'
+echo '    </header>'
+echo '    <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">'
+echo '      <ol>'
+echo '        <li><a epub:type="titlepage" href="titlepage.xhtml">Title page</a></li>'
+
+ID=1
+for f in ${HTML} ; do
+    title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE *//' -e 's/ *-->//p }' $f )
+    if [[ -z "$title" ]] ; then
+        title=$ID
+    fi
+
+    echo '        <li><a epub:type="chapter" href="'${f}'">'${title}'</a></li>'
+    ID+=1
+done
+
+echo '      </ol>'
+echo '    </nav>'
+echo '  </section>'
+echo '</body>'
+echo '</html>'
+
+} > toc.xhtml
+
+
+FILES="toc.xhtml toc.ncx content.opf META-INF"
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -r ${FILES} ${COVER} ${HTML} ${CSS} ${IMAGE} ${TTF}
+zip ${EPUB} -X -r ${TTF} ${IMAGE} ${CSS} ${HTML} titlepage.xhtml ${COVER} ${FILES}
 
 rm -rf mimetype ${FILES}
+[[ "$TP" -eq 1 ]] && rm titlepage.xhtml
 
 exit 0
 
