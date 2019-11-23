@@ -282,15 +282,38 @@ echo '    <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc
 echo '      <ol>'
 echo '        <li><a epub:type="titlepage" href="titlepage.xhtml">Title page</a></li>'
 
+rr () { for (( zz=0 ; $zz < $1 ; zz++ )) ; do echo -n '  ' ; done ; }
+onest=0
+nest=0
 ID=1
 for f in ${HTML} ; do
-    title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE *//' -e 's/ *-->//p }' $f )
+    title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE  *//' -e 's/  *-->//p }' $f )
     if [[ -z "$title" ]] ; then
         title=$ID
+    else
+        nest=$( echo $title | grep -o '^--*' | wc -c )
+        (( $nest > 0 )) && let nest--
+        title=$( echo $title | sed -e 's/^--* //' )
     fi
 
+    for (( t=$onest; $t < $nest ; t++ )) ; do
+        rr $t
+        echo '        <ol>'
+    done
+    for (( t=$onest; $t > $nest ; t-- )) ; do
+        rr $(( $t - 1 ))
+        echo '        </ol>'
+    done
+    rr $nest
     echo '        <li><a epub:type="chapter" href="'${f}'">'${title}'</a></li>'
-    ID+=1
+
+    onest=$nest
+    let ID++
+done
+
+for (( t=$nest; $t > 0 ; t-- )) ; do
+    rr $(( $t - 1 ))
+    echo '        </ol>'
 done
 
 echo '      </ol>'
