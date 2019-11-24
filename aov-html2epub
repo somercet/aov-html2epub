@@ -17,7 +17,7 @@ HTML=""
 CSS=""
 TTF=""
 IMAGE=""
-LANG="en-US"
+LANGUAGE="en-US"
 SUBJECT=""
 CREATOR=""
 TRANSLATOR=""
@@ -54,7 +54,7 @@ do
     -a)         AUTHOR="$2"                     ; shift ;;
     -f)         FILEAS="$2"                     ; shift ;;
     -c)         COVER="$2"                      ; shift ;;
-    -l)         LANG="$2"                       ; shift ;;
+    -l)         LANGUAGE="$2"                   ; shift ;;
     -p)         CREATOR="$2"                    ; shift ;;
     -P)         PUBLISHER="$2"                  ; shift ;;
     -T)         TRANSLATOR="$2"                 ; shift ;;
@@ -123,7 +123,7 @@ if [[ -r titlepage.xhtml ]] ; then
 else
 	{
 	echo '<!DOCTYPE html>'
-	echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${LANG}'">'
+	echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${LANGUAGE}'">'
 	echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
 	echo '<!-- TTITLE Cover -->'
 
@@ -145,7 +145,7 @@ echo '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
 
 # REQUIRED
 echo '    <dc:title>'${TITLE}'</dc:title>'
-echo '    <dc:language>'${LANG}'</dc:language>'
+echo '    <dc:language>'${LANGUAGE}'</dc:language>'
 echo '    <dc:identifier id="uuid_id">'${UUID}'</dc:identifier>'
 
 f=$( date -Iseconds -u | sed 's/+00:00/Z/' )
@@ -226,7 +226,7 @@ echo '</package>'
 
 {  # write DEPRECATED EPUB2 toc.ncx
 echo '<?xml version="1.0" encoding="utf-8"?>'
-echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${LANG}'">'
+echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${LANGUAGE}'">'
 echo '  <head>'
 echo '    <meta content="'${UUID}'" name="dtb:ui" />'
 echo '    <meta content="2" name="dtb:depth" />'
@@ -265,7 +265,7 @@ echo '</ncx>'
 {  # write NAV toc.xhtml
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
-echo '  xml:lang="'${LANG}'" lang="'${LANG}'">'
+echo '  xml:lang="'${LANGUAGE}'" lang="'${LANGUAGE}'">'
 echo '<head>'
 echo '  <title>'${TITLE}'</title>'
 for f in ${CSS} ; do
