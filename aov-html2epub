@@ -37,7 +37,7 @@ Options:
  -f file-as          Author 'Last, First'
  -s subject          Subject(s)
  -p creator          Creator
- -p publisher        Publisher
+ -P publisher        Publisher
  -T translator       Translator
  -c cover.img        Cover image
  -l lang             Language (RFC 4646, default "en-US")
@@ -78,10 +78,10 @@ done
 
 {  # error checks
     if [[ -z "$HTML" ]] ; then
-        echo "$0: No HTML files; aborting"
+        echo "$0: No HTML files; aborting."
         exit 2
     elif [[ -z "$EPUB" ]] ; then
-        echo "$0: No EPUB file named; aborting"
+        echo "$0: No EPUB file named; aborting."
         exit 2
     elif [[ -w . ]] ; then
         rm -f ${EPUB}
