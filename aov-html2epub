@@ -38,7 +38,7 @@ Options:
  -s subject          Subject(s)
  -p creator          Creator
  -p publisher        Publisher
- -T translator       If any
+ -T translator       Translator
  -c cover.img        Cover image
  -l lang             Language (RFC 4646, default "en-US")
  -L licence          Default "none"
@@ -124,12 +124,17 @@ else
     {
     echo '<!DOCTYPE html>'
     echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${ELANG}'">'
-    echo '<head><title>'${TITLE} - ${AUTHOR}'</title></head><body>'
+    echo '<head><title>'${TITLE} - ${AUTHOR}'</title>'
+    for f in ${CSS} ; do
+        echo '<link rel="stylesheet" href="'${f}'" type="text/css" />'
+    done
+    echo '</head><body class="titlepage">'
     echo '<!-- TTITLE Cover -->'
 
     if [[ -n "$COVER" ]] ; then
         echo '<div style="text-align: center;"><img src="'${COVER}'" alt="'${TITLE} by ${AUTHOR}'" /></div>'
     else
+	echo $COVER
         echo '<h1>'${TITLE}'</h1><h2>'${AUTHOR}'</h2>'
     fi
 
@@ -280,8 +285,8 @@ echo '    <header>'
 echo '      <h1>Contents</h1>'
 echo '    </header>'
 echo '    <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">'
-echo '      <ol>'
-echo '        <li><a epub:type="titlepage" href="titlepage.xhtml">Title page</a></li>'
+echo '      <ol class="epub3toc">'
+echo -n '        <li><a epub:type="titlepage" href="titlepage.xhtml">Title page</a>'
 
 rr () { for (( zz=0 ; $zz < $1 ; zz++ )) ; do echo -n '  ' ; done ; }
 onest=0
@@ -297,20 +302,30 @@ for f in ${HTML} ; do
         title=$( echo $title | sed -e 's/^--* //' )
     fi
 
+    if (( $onest == $nest )); then
+        echo '</li>'
+    fi
     for (( t=$onest; $t < $nest ; t++ )) ; do
+        echo
         rr $t
-        echo '        <ol>'
+        echo '          <ol>'
     done
     for (( t=$onest; $t > $nest ; t-- )) ; do
+        echo '</li>'
         rr $(( $t - 1 ))
-        echo '        </ol>'
+        echo '          </ol>'
+        rr $(( $t - 1 ))
+        echo '        </li>'
     done
+
     rr $nest
-    echo '        <li><a epub:type="chapter" href="'${f}'">'${title}'</a></li>'
+    echo -n '        <li><a epub:type="chapter" href="'${f}'">'${title}'</a>'
 
     onest=$nest
     let ID++
 done
+
+    echo '</li>'
 
 for (( t=$nest; $t > 0 ; t-- )) ; do
     rr $(( $t - 1 ))
@@ -322,6 +337,16 @@ echo '    </nav>'
 echo '  </section>'
 echo '</body>'
 echo '</html>'
+
+
+#  <nav epub:type="page-list">
+#    <ol>
+#      <li><a href="georgia.xhtml#page752">752</a></li>
+#      <li><a href="georgia.xhtml#page753">753</a></li>
+#    </ol>
+#  </nav>
+#
+# /home/peter/aov-html2epub/epub3-samples/30/georgia-pls-ssml/EPUB/nav.xhtml
 
 } > toc.xhtml
 
