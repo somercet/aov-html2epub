@@ -229,7 +229,29 @@ echo '  </guide>'
 echo '</package>'
 } > content.opf
 
-{  # write DEPRECATED EPUB2 toc.ncx
+
+# write DEPRECATED EPUB2 TOC
+exec 3> toc.ncx
+# write EPUB3 NAV
+exec 4> toc.xhtml
+# write possible TOC.XHTML PPAGES
+ppagelist=$( mktemp )
+exec 5> $ppagelist
+# write possible PPAGE edits to XHTML
+ppageedits=$( mktemp )
+exec 6> $ppageedits
+
+breaker=$( mktemp )
+cat << EOM > $breaker
+s/[\t ]+-->//
+s/:<!--[\t ]*/:/
+s/[\t ]+/" "/
+s/$/" )/
+s/:/" "/
+s/^/( "/
+EOM
+
+{
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
 echo '  <head>'
@@ -246,29 +268,12 @@ echo '  <docAuthor>'
 echo '    <text>'${AUTHOR}'</text>'
 echo '  </docAuthor>'
 echo '  <navMap>'
+echo '    <navPoint id="titlepage.xhtml" playOrder="1">'
+echo '      <navLabel><text>Title page</text></navLabel>'
+echo '      <content src="titlepage.xhtml" />'
+} >&3
 
-ID=1
-for f in titlepage.xhtml ${HTML} ; do
-    title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE *//' -e 's/ *-->//p }' $f )
-    title=$( echo $title | sed -e 's/^--* //' )
-    if [[ -z "$title" ]] ; then
-        title=$ID
-    fi
-
-    echo '    <navPoint id="'$( basename ${f} )'" playOrder="'${ID}'">'
-    echo '      <navLabel><text>'${title}'</text></navLabel>'
-    echo '      <content src="'${f}'" />'
-    echo '    </navPoint>'
-
-    let ID++
-done
-
-echo '  </navMap>'
-echo '</ncx>'
-} > toc.ncx
-
-
-{  # write NAV toc.xhtml
+{
 echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
 echo '  xml:lang="'${ELANG}'" lang="'${ELANG}'">'
@@ -285,58 +290,100 @@ echo '    <header>'
 echo '      <h1>Contents</h1>'
 echo '    </header>'
 echo '    <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">'
-echo '      <ol class="epub3toc">'
+echo '      <ol class="epub3toc0">'
 echo -n '        <li><a epub:type="titlepage" href="titlepage.xhtml">Title page</a>'
+} >&4
 
-rr () { for (( zz=0 ; $zz < $1 ; zz++ )) ; do echo -n '  ' ; done ; }
-onest=0
-nest=0
-ID=1
-for f in ${HTML} ; do
-    title=$( sed -n -e '/TTITLE / {' -e 's/.*TTITLE  *//' -e 's/  *-->//p }' $f )
-    if [[ -z "$title" ]] ; then
-        title=$ID
-    else
-        nest=$( echo $title | grep -o '^--*' | wc -c )
-        (( $nest > 0 )) && let nest--
-        title=$( echo $title | sed -e 's/^--* //' )
-    fi
 
-    if (( $onest == $nest )); then
-        echo '</li>'
-    fi
-    for (( t=$onest; $t < $nest ; t++ )) ; do
-        echo
-        rr $t
-        echo '          <ol>'
+ID=2
+oonest=$( mktemp )
+echo -n 0 > $oonest
+
+for f in ${HTML}
+do
+    TT=0
+    egrep -n -o '<!--[^>]*(TTITLE|PPAGE)[^>]*-->' ${f} | sed -E -f $breaker | while read a
+    do
+	declare -a LN
+        eval LN=$a
+        onest=$( cat $oonest )
+
+        if [[ "${LN[1]}" = "PPAGE" ]]; then
+            echo '<li><a href="'${f}'#page'${LN[2]}'">'${LN[2]}'</a></li>' >&5
+            echo ${LN[0]} 's;$;<span class="pages" id="page'${LN[2]}'"></span>;' >&6
+            # TODO s/<!--.*PPAGE[\t ]*
+        else
+            TT=1
+            LN[1]=${LN[1]#TTITLE}
+            ngap=$( printf '%*s' $(( ${LN[1]:=0} * 2 )) )
+            ogap=$( printf '%*s' $(( ${onest}    * 2 )) )
+
+            if (( $onest >= ${LN[1]:=0} )); then
+                echo "$ogap    </navPoint>" >&3
+
+                echo '</li>' >&4
+            fi
+
+            for (( ; $onest < ${LN[1]} ; onest++ )) ; do
+                #echo >&3
+
+                echo >&4
+                echo "$ngap        <ol>" >&4
+            done
+
+            for (( ; $onest > ${LN[1]} ; )) ; do
+                echo "$ogap        </ol>" >&4
+                echo "$ogap      </li>"   >&4
+                let onest--
+                ogap=$( printf '%*s' $(( ${onest}    * 2 )) )
+
+                echo "$ogap    </navPoint>" >&3
+            done
+
+            echo "$ngap    <navPoint id=\"$( basename ${f} )\" playOrder=\"${ID}\">" >&3
+            echo "$ngap      <navLabel><text>${LN[2]:=${ID}}</text></navLabel>" >&3
+            echo "$ngap      <content src=\"${f}\" />" >&3
+
+            echo -n "$ngap        <li><a epub:type=\"chapter\" href=\"${f}\">${LN[2]}</a>" >&4
+
+            echo -n $onest > $oonest
+        fi
+
+        unset LN
     done
-    for (( t=$onest; $t > $nest ; t-- )) ; do
-        echo '</li>'
-        rr $(( $t - 1 ))
-        echo '          </ol>'
-        rr $(( $t - 1 ))
-        echo '        </li>'
-    done
-
-    rr $nest
-    echo -n '        <li><a epub:type="chapter" href="'${f}'">'${title}'</a>'
-
-    onest=$nest
     let ID++
+
+
 done
 
-    echo '</li>'
+echo '    </navPoint>' >&3
+echo '  </navMap>' >&3
+echo '</ncx>' >&3
 
-for (( t=$nest; $t > 0 ; t-- )) ; do
-    rr $(( $t - 1 ))
-    echo '        </ol>'
+echo '</li>' >&4
+
+onest=$( cat $oonest )
+for (( ; $onest > 0 ; )) ; do
+    let oonest--
+
+    ogap=$( printf '%*s' $(( $onest * 2 )) )
+    echo "$ogap          </ol>" >&4
+    echo "$ogap        </li>"   >&4
 done
 
+{
 echo '      </ol>'
 echo '    </nav>'
 echo '  </section>'
 echo '</body>'
 echo '</html>'
+} >&4
+
+rm $breaker $oonest $ppagelist $ppageedits
+
+exec 3>&- 4>&- 5>&- 6>&-
+
+# END TOC PROCESSING
 
 
 #  <nav epub:type="page-list">
@@ -347,9 +394,6 @@ echo '</html>'
 #  </nav>
 #
 # /home/peter/aov-html2epub/epub3-samples/30/georgia-pls-ssml/EPUB/nav.xhtml
-
-} > toc.xhtml
-
 
 FILES="toc.xhtml toc.ncx content.opf META-INF"
 
