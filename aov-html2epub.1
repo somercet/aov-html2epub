@@ -3,35 +3,32 @@
 .Dt ID3V2 1 "User Commands"
 .Sh NAME
 .Nm aov-html2epub
-.Nd Takes a list of HTML files and turns them into a v. 3 EPUB.
+.Nd Takes a list of HTML files and turns them into a EPUB, version 3, with back-compatibility for v2.
 .Sh SYNOPSIS
 .Nm
-.Op
-.Ar EPUB FILE
+.Ar EPUB_FILE
 .Fl t Ar title
-.Fl a Ar name
-.Fl f Ar reversename
-.Fl d Ar date
-.Fl s Ar subject
-.Fl p Ar creator          
-.Fl p Ar publisher        
-.Fl T Ar translator       
-.Fl c Ar cover.img        
-.Fl l Ar lang             
-.Fl L Ar license
-.Fl u Ar uuid
+.Op Fl a Ar name
+.Op Fl f Ar reversename
+.Op Fl d Ar date
+.Op Fl s Ar subject
+.Op Fl p Ar creator
+.Op Fl P Ar publisher
+.Op Fl T Ar translator
+.Op Fl c Ar cover.img
+.Op Fl l Ar lang
+.Op Fl L Ar license
+.Op Fl u Ar uuid
 .Ar FILES
 \&...
 .Sh DESCRIPTION
 .Nm
-copies HTML files into a subdirectory, OPS, and generates files, correctly formatted:
+zips HTML and other files into an EPUB, generating files to index the contents,
+all correctly formatted:
 .Bl -column
-.It Ar mimetype
-.It Ar container.xml
-.It Ar content.opf
-.It Ar toc.xhtml
-.It toc.ncx
-.It Ar titlepage.xhtml
+.It mimetype Ta container.xml
+.It content.opf Ta titlepage.xhtml
+.It toc.xhtml Ta toc.ncx
 .El
 If you provide the titlepage in the build directory,
 .Nm
@@ -49,13 +46,13 @@ option,
 .Xr uuidgen 1
 will be used to generate one. All HTML files specified on the command line
 will be added as a part of the content, in the same order as on invocation. Only
-.Sy generated
+.Em generated
 files are removed when the program completes.
 .Sh OPTIONS
 .Bl -tag
 .It Fl t Ar title
 Book title,
-.Sy required
+.Em required
 .It Fl a Ar name
 Author name, "First Last"
 .It Fl f Ar reverse name
@@ -64,15 +61,15 @@ Author name, "Last, First"
 Date first published (ISO 8601)
 .It Fl s Ar subject
 Subject(s)
-.It Fl p Ar creator          
+.It Fl p Ar creator
 EPUB creator
-.It Fl p Ar publisher        
+.It Fl P Ar publisher
 Publishing house
-.It Fl T Ar translator       
+.It Fl T Ar translator
 Translator
-.It Fl c Ar cover.img        
+.It Fl c Ar cover.img
 Cover image
-.It Fl l Ar lang             
+.It Fl l Ar lang
 Language (RFC 4646, default "en-US")
 .It Fl L Ar license
 Content licence, default "none"
@@ -81,15 +78,16 @@ Universal Unique ID
 .El
 .Sh EXAMPLES
 .Xr make 1
-is an excellent tool for building and updating EPUBs with this script. 
+is an excellent tool for building and updating EPUBs with this script.
 .Sh SEE ALSO
 .Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
 .Sh AUTHOR
+"Released under the public domain. Use as you want, specially for evil."
 .Nm
 was originally by
 .An Angel Ortega ,
-which made me, 
-.An somercet , realize EPUBs were actually simple.
-The original and this heavily modified version are publicly available at
-.Lk https://github.com/somercet/aov-html2epub Github .
-"Released under the public domain. Use as you want, specially for evil."
+who made me,
+.An somercet ,
+realize EPUBs were actually simple (but persnickety).  The original
+program, and this heavily modified version, are publicly available at
+.Lk https://github.com/somercet/aov-html2epub Github
