@@ -1,6 +1,6 @@
 .Dd June 21, 2020
 .Os Unix
-.Dt ID3V2 1 "User Commands"
+.Dt aov-html2epub 1 "User Commands"
 .Sh NAME
 .Nm aov-html2epub
 .Nd Takes a list of HTML files and turns them into a EPUB, version 3, with back-compatibility for v2.
@@ -9,7 +9,7 @@
 .Ar EPUB_FILE
 .Fl t Ar title
 .Op Fl a Ar name
-.Op Fl f Ar reversename
+.Op Fl f Ar filebyname
 .Op Fl d Ar date
 .Op Fl s Ar subject
 .Op Fl p Ar creator
@@ -25,11 +25,13 @@
 .Nm
 zips HTML and other files into an EPUB, generating files to index the contents,
 all correctly formatted:
+.Bd -ragged -offset indent
 .Bl -column
 .It mimetype Ta container.xml
 .It content.opf Ta titlepage.xhtml
 .It toc.xhtml Ta toc.ncx
 .El
+.Ed
 If you provide the titlepage in the build directory,
 .Nm
 will copy that instead of creating its own. Only the EPUB name, one or more
@@ -55,7 +57,7 @@ Book title,
 .Em required
 .It Fl a Ar name
 Author name, "First Last"
-.It Fl f Ar reverse name
+.It Fl f Ar filebyname
 Author name, "Last, First"
 .It Fl d Ar date
 Date first published (ISO 8601)
@@ -78,16 +80,18 @@ Universal Unique ID
 .El
 .Sh EXAMPLES
 .Xr make 1
-is an excellent tool for building and updating EPUBs with this script.
+is an excellent tool for building and updating EPUBs with this script. The simplest
+example:
+.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html part2.html part3.html
+A more complex example:
+.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross\&" -f \&"Ross, Bob\&" -d 2001-12 -s Painting -s Trees -c trees.jpg -u c5be00f9-932e-4903-8cd9-b4b5939411a6 -P \&"Happy Tree Publishing House\&" part1.html part2.html part3.html treesnewroman.ttf default.css
 .Sh SEE ALSO
 .Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
-.Sh AUTHOR
+.Sh LICENSE
 "Released under the public domain. Use as you want, specially for evil."
-.Nm
-was originally by
-.An Angel Ortega ,
-who made me,
-.An somercet ,
-realize EPUBs were actually simple (but persnickety).  The original
-program, and this heavily modified version, are publicly available at
+This program is publicly available at
 .Lk https://github.com/somercet/aov-html2epub Github
+\&.
+.Sh AUTHORS
+.An Angel Ortega
+.An somercet
