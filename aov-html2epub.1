@@ -3,7 +3,7 @@
 .Dt aov-html2epub 1 "User Commands"
 .Sh NAME
 .Nm aov-html2epub
-.Nd Takes a list of HTML files and turns them into a EPUB, version 3, with back-compatibility for v2.
+.Nd Takes a list of HTML files and turns them into an EPUB, version 3, with back-compatibility for v2.
 .Sh SYNOPSIS
 .Nm
 .Ar EPUB_FILE
@@ -19,12 +19,21 @@
 .Op Fl l Ar lang
 .Op Fl L Ar license
 .Op Fl u Ar uuid
-.Ar FILES
-\&...
+.Ar
 .Sh DESCRIPTION
 .Nm
-zips HTML and other files into an EPUB, generating files to index the contents,
-all correctly formatted:
+zips *.html and other files into an EPUB with a proper mimetype file (the latter stored, not deflated).
+Only the EPUB name, one or more HTML5 files, and a book title are required to build an EPUB.
+Fonts (*.ttf and *.woff), *.css and image files may be included by listing them on the command line.
+.Nm
+will sort (by extension) and catalog them separately from the HTML in content.opf's manifest.
+.Pp
+All *.html files specified on the command line, in that order, will be added as content.
+Tables of contents for versions 2 and 3 are generated for the HTML files.
+Nested TOCs are supported.
+.Pp
+.Nm
+generates these files, which are all deleted after the EPUB is built:
 .Bd -ragged -offset indent
 .Bl -column
 .It mimetype Ta container.xml
@@ -32,24 +41,23 @@ all correctly formatted:
 .It toc.xhtml Ta toc.ncx
 .El
 .Ed
-If you provide the titlepage in the build directory,
-.Nm
-will copy that instead of creating its own. Only the EPUB name, one or more
-HTML files, and a book title are required to build an EPUB, all other options and
-files are optional.
 .Pp
-HTML, CSS, TTF, WOFF and image files can be added.
+If you provide “titlepage.xhtml” in the build directory,
+.Nm
+will copy it instead of creating and deleting its own.
+If the file “description” exists, it will be added to the manifest's “dc:description” section.
+It should be one or more lines of UTF-8 text and contain no HTML (a final newline is not required).
+.Pp
 .Xr file 1
-is used to generate the MIME type and
+is used to generate the MIME types of non-HTML files.
 .Xr zip 1
-to generate the EPUB. If a UUID is not provided with the
+is used to generate the EPUB.
+If
 .Fl u
-option,
+is not specified,
 .Xr uuidgen 1
-will be used to generate one. All HTML files specified on the command line
-will be added as a part of the content, in the same order as on invocation. Only
-.Em generated
-files are removed when the program completes.
+will be used to generate a random UUID, if present.
+For consistency, generate a single random UUID for each book and specify it on each build.
 .Sh OPTIONS
 .Bl -tag
 .It Fl t Ar title
@@ -60,9 +68,11 @@ Author name, "First Last"
 .It Fl f Ar filebyname
 Author name, "Last, First"
 .It Fl d Ar date
-Date first published (ISO 8601)
+Publishing date (ISO 8601), e.g. July 1999 is "1999\&-07"
 .It Fl s Ar subject
-Subject(s)
+Subject(s) (zero or more, one
+.Fl s
+per subject)
 .It Fl p Ar creator
 EPUB creator
 .It Fl P Ar publisher
@@ -74,21 +84,23 @@ Cover image
 .It Fl l Ar lang
 Language (RFC 4646, default "en-US")
 .It Fl L Ar license
-Content licence, default "none"
+Content license, default "none"
 .It Fl u Ar uuid
 Universal Unique ID
 .El
 .Sh EXAMPLES
-.Xr make 1
-is an excellent tool for building and updating EPUBs with this script. The simplest
-example:
+The simplest example:
 .Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html part2.html part3.html
 A more complex example:
-.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross\&" -f \&"Ross, Bob\&" -d 2001-12 -s Painting -s Trees -c trees.jpg -u c5be00f9-932e-4903-8cd9-b4b5939411a6 -P \&"Happy Tree Publishing House\&" part1.html part2.html part3.html treesnewroman.ttf default.css
+.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross\&" -f \&"Ross, Bob\&" \
+-d 2001-12 -s Painting -s Trees -c treecover.jpg -u c5be00f9-932e-4903-8cd9-b4b5939411a6 \
+-P \&"Happy Tree Publishing House\&" part1.html part2.html part3.html treesnewroman.ttf default.css
+.Xr make 1
+is an excellent tool for building and updating EPUBs with this script.
 .Sh SEE ALSO
 .Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
 .Sh LICENSE
-"Released under the public domain. Use as you want, specially for evil."
+“Released under the public domain. Use as you want, specially for evil.”
 This program is publicly available at
 .Lk https://github.com/somercet/aov-html2epub Github
 \&.
