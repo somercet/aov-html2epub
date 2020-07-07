@@ -3,7 +3,7 @@
 .Dt aov-html2epub 1 "User Commands"
 .Sh NAME
 .Nm aov-html2epub
-.Nd Takes a list of HTML files and turns them into an EPUB, version 3, with back-compatibility for v2.
+.Nd Takes a list of HTML5 files and turns them into an EPUB, version 3, with back-compatibility for v2.
 .Sh SYNOPSIS
 .Nm
 .Ar EPUB_FILE
@@ -19,16 +19,32 @@
 .Op Fl l Ar lang
 .Op Fl L Ar license
 .Op Fl u Ar uuid
+.Op Fl D Ar subdir
+.Op Fl -debug
 .Ar
 .Sh DESCRIPTION
 .Nm
-zips *.html and other files into an EPUB with a proper mimetype file (the latter stored, not deflated).
+zips
+.Pa *.html
+and other files into an EPUB with a proper
+.Pa mimetype
+file (the latter stored, not deflated).
 Only the EPUB name, one or more HTML5 files, and a book title are required to build an EPUB.
-Fonts (*.ttf and *.woff), *.css and image files may be included by listing them on the command line.
+Fonts (
+.Pa *.ttf
+and
+.Pa *.woff
+),
+.Pa *.css
+and image files may be included by listing them on the command line.
 .Nm
-will sort (by extension) and catalog them separately from the HTML in content.opf's manifest.
+will sort (by extension) and catalog them separately from the HTML in the
+.Pa content.opf
+manifest.
 .Pp
-All *.html files specified on the command line, in that order, will be added as content.
+All
+.Pa *.html
+files specified on the command line, in that order, will be added as content.
 Tables of contents for versions 2 and 3 are generated for the HTML files.
 Nested TOCs are supported.
 .Pp
@@ -42,10 +58,14 @@ generates these files, which are all deleted after the EPUB is built:
 .El
 .Ed
 .Pp
-If you provide “titlepage.xhtml” in the build directory,
+If you provide
+.Pa titlepage.xhtml
+in the build directory,
 .Nm
-will copy it instead of creating and deleting its own.
-If the file “description” exists, it will be added to the manifest's “dc:description” section.
+will use it instead of creating and deleting its own.
+If the file
+.Pa description
+exists, it will be added to the manifest's “dc:description” section.
 It should be one or more lines of UTF-8 text and contain no HTML (a final newline is not required).
 .Pp
 .Xr file 1
@@ -58,6 +78,19 @@ is not specified,
 .Xr uuidgen 1
 will be used to generate a random UUID, if present.
 For consistency, generate a single random UUID for each book and specify it on each build.
+.Pp
+The EPUB standard allows the OPF file (and every other file) to be in the base directory of the ZIP file, along with
+.Pa mimetype
+and
+.Pa META-INF .
+But it is cleaner and more correct to place it (and the other generated files) in a subdirectory, canonically
+.Pa OPS
+or
+.Pa OEBPS .
+Setting a sub-directory like
+.Fl D Ar OPS
+builds the generated files in that subdir, and sets the correct relative filepaths in the OPF and TOC files.
+No ungenerated files are moved or deleted by this program.
 .Sh OPTIONS
 .Bl -tag
 .It Fl t Ar title
@@ -87,23 +120,36 @@ Language (RFC 4646, default "en-US")
 Content license, default "none"
 .It Fl u Ar uuid
 Universal Unique ID
+.It Fl D Ar subdir
+Build subdirectory (OPS or OEBPS)
+.It Fl -debug
+Do not delete generated files
 .El
 .Sh EXAMPLES
 The simplest example:
 .Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html part2.html part3.html
+.Pp
 A more complex example:
 .Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross\&" -f \&"Ross, Bob\&" \
 -d 2001-12 -s Painting -s Trees -c treecover.jpg -u c5be00f9-932e-4903-8cd9-b4b5939411a6 \
 -P \&"Happy Tree Publishing House\&" part1.html part2.html part3.html treesnewroman.ttf default.css
+.Pp
+A simple example using the
+.Pa OEBPS
+subdirectory. Note: with 
+.Fl D Ar OEBPS
+set, this app will expect the cover image at
+.Pa OEBPS/treecover.jpg :
+.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -D OEBPS -c treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html OEBPS/default.css
+.Pp
 .Xr make 1
 is an excellent tool for building and updating EPUBs with this script.
 .Sh SEE ALSO
-.Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
+.Xr epubcheck 1 , zip 1 , Xr uuidgen 1 , Xr file 1 .
 .Sh LICENSE
 “Released under the public domain. Use as you want, specially for evil.”
 This program is publicly available at
 .Lk https://github.com/somercet/aov-html2epub Github
-\&.
 .Sh AUTHORS
-.An Angel Ortega
 .An somercet
+.An Angel Ortega Aq Mt angel@triptico.com
