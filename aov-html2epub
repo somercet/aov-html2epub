@@ -4,7 +4,6 @@
 #
 # Peter Buxton <somercet@gmail.com>
 # Angel Ortega <angel@triptico.com>
-# Shakna Israel <s4b3r6@gmail.com>
 #
 # Public domain
 
@@ -26,7 +25,7 @@ PUBLISHER=""
 LICENSE="none"
 UUID=""
 OPS=""
-DEBUG=0
+DEBUG=false
 
 FILES=""
 XTRA=""
@@ -46,7 +45,7 @@ Options:
  -d date             First published date (ISO 8601)
  -c cover.img        Cover image
  -l lang             Language (RFC 4646, default "en-US")
- -L licence          Default "none"
+ -L licence          Copyright or license, default "none"
  -u UUID             Universal Unique ID
  -D OPS              Build subdirectory (OPS or OEBPS)
  --debug             Keep output files for debugging
@@ -70,7 +69,7 @@ do
     -L)         LICENSE="$2"                    ; shift ;;
     -s)         SUBJECT+=("$2")                 ; shift ;;
     -D)         OPS="$2"                        ; shift ;;
-    --debug)    DEBUG=1                                 ;;
+    --debug)    DEBUG=true                              ;;
     *.epub)     EPUB="$1"                               ;;
     *.xhtml | *.html)
                 HTML="${HTML} $1"                       ;;
@@ -174,7 +173,7 @@ echo '    <dc:title>'${TITLE}'</dc:title>'
 if [[ -n "$AUTHOR" ]] ; then
     echo '    <dc:creator id="author">'${AUTHOR}'</dc:creator>'
     echo '      <meta property="role" scheme="marc:relators" refines="#author">aut</meta>'
-    if [ -n "$FILEAS" ] ; then
+    if [[ -n "$FILEAS" ]] ; then
         echo '      <meta property="file-as" refines="#author">'${FILEAS}'</meta>'
     fi
 fi
@@ -206,6 +205,7 @@ echo '  <manifest>'
 
 if [[ -n "$COVER" ]] ; then
     echo '    <item href="'${COVER}'" id="cover" properties="cover-image" media-type="'$( file -b --mime-type ${OPS}${COVER} )'" />'
+    COVER=${OPS}${COVER}
 fi
 
 echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
@@ -327,7 +327,7 @@ do
         onest=$( cat $oonest )
 
         if [[ "${LN[1]}" = "PPAGE" ]]; then
-            echo '<li><a href="'${f}'#page'${LN[2]}'">'${LN[2]}'</a></li>' >&5
+            echo '<li><a href="'${f#${OPS}}'#page'${LN[2]}'">'${LN[2]}'</a></li>' >&5
             echo ${LN[0]} 's;$;<span class="pages" id="page'${LN[2]}'"></span>;' >&6
             # TODO s/<!--.*PPAGE[\t ]*
         else
@@ -417,9 +417,9 @@ FILES="${OPS}toc.xhtml ${OPS}toc.ncx ${FILES}"
 
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -9 ${TTF} ${IMAGE} ${HTML} ${CSS} ${OPS}${COVER} ${XTRA} ${FILES}
+zip ${EPUB} -X -9 ${TTF} ${IMAGE} ${HTML} ${CSS} ${COVER} ${XTRA} ${FILES}
 
-if [[ ${DEBUG} -eq 0 ]] ; then
+if ! ${DEBUG} ; then
     rm mimetype ${FILES}
     rmdir META-INF
 fi
