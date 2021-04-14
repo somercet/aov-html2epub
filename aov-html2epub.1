@@ -1,4 +1,4 @@
-.Dd June 21, 2020
+.Dd April 14, 2021
 .Os Unix
 .Dt aov-html2epub 1 URM
 .Sh NAME
@@ -8,7 +8,7 @@
 .Nm
 .Ar EPUB_FILE
 .Fl t Ar title
-.Op Fl a Ar name Ns Op Ar "|filebyname"
+.Op Fl a Ar name Ns Op Ar |filebyname
 .Op Fl d Ar date
 .Op Fl s Ar subject
 .Op Fl p Ar maker
@@ -25,53 +25,58 @@
 .Nm
 zips
 .Pa *.html
-and other files into an EPUB with a proper
+and other files into an EPUB with a correct
 .Pa mimetype
-file (the latter stored, not deflated).
-Only the EPUB name, one or more HTML5 files, and a book title are required to build an EPUB.
-Fonts (
+file
+.Pq stored, not deflated .
+The only
+.Em requirements
+to build an EPUB are: the EPUB name, a title, and one or more HTML5 files.
+The order of command line options is generally unimportant
+.Em except
+to HTML files and the
+.Fl a Ar author
+arguments, see below.
+.Pp
+Tables of contents
+.Pq TOCs
+for EPUB2 and 3 are generated for the HTML files.
+Nested TOCs are supported.
+All HTML files will be added to the EPUB reading order
+.Em exactly as given on the command line .
+.Pp
+Font
+.Po
 .Pa *.ttf
 and
 .Pa *.woff
-),
-.Pa *.css
-and image files may be included by listing them on the command line.
+.Pc ,
+CSS, and image files may be included by listing them on the command line;
 .Nm
-will sort (by extension) and catalog them separately from the HTML in the
-.Pa content.opf
-manifest.
+will catalog them properly in the OPF file manifest.
 .Pp
-All
-.Pa *.html
-files specified on the command line, in that order, will be added as content.
-Tables of contents for versions 2 and 3 are generated for the HTML files.
-Nested TOCs are supported.
-.Pp
-Subjects, authors, and titles may be specified more than once.
+Subject, author, and title may be specified more than once.
 .Pp
 .Nm
 generates these files, which are all deleted after the EPUB is built:
 .Bd -ragged -offset indent
 .Bl -column
-.It mimetype Ta container.xml
-.It toc.ncx Ta content.opf
-.It toc.xhtml Ta titlepage.xhtml
+.It Pa mimetype Ta Pa META-INF/container.xml
+.It Pa toc.ncx Ta Pa content.opf
+.It Pa toc.xhtml Ta Pa titlepage.xhtml
 .El
 .Ed
 .Pp
-If you provide
-.Pa titlepage.xhtml
-in the build directory,
-.Nm
-will use it instead of creating and deleting its own.
+A customized yet basic title page will be generated unless you provide one in the build directory.
+If a cover image is provided, it will be the only element visible on the title page.
 If the file
 .Pa description
-exists, it will be added to the manifest's “dc:description” section.
-It should be one or more lines of UTF-8 text and contain no HTML
-.Pq a final newline is not required .
+exists
+.Pq which should contain one or more lines of UTF-8 text, and no HTML ,
+it will be added to the OPF file’s “dc:description” section.
 .Pp
 .Xr file 1
-is used to generate the MIME types of non-HTML files.
+is used to identify the MIME types of non-HTML files.
 .Xr zip 1
 is used to generate the EPUB.
 If
@@ -79,24 +84,23 @@ If
 is not specified,
 .Xr uuidgen 1
 will be used to generate a random UUID, if present.
-For consistency, generate a single random UUID for each book and specify it on each build.
+For consistency, randomly generate a single UUID for each book and specify it each time you build.
 .Pp
 The EPUB standard allows the OPF file
 .Pq and every other file
 to be in the base directory of the ZIP file, along with
 .Pa mimetype
 and
-.Pa META-INF .
-But it is cleaner and more correct to place it
-.Pq and the other generated files
-in a subdirectory, canonically
+.Pa META-INF/ .
+But it is cleaner and more correct to place these files in a subdirectory, canonically
 .Pa OPS
 or
 .Pa OEBPS .
-Setting a sub-directory like
+Specifying a sub-directory like
 .Fl D Ar OPS
 builds the generated files in that subdir, and sets the correct relative filepaths in the OPF and TOC files.
-No ungenerated files are moved or deleted by this program.
+.Pp
+No ungenerated files should be moved, modified, or deleted by this program.
 .Sh OPTIONS
 .Bl -tag
 .It Fl t Ar title
@@ -105,14 +109,19 @@ Book title, one
 is
 .Em required .
 .It Fl a Ar name Ns Op Ar |filebyname
-Author name(s), zero or more, and (optional) file-by name, separated with a pipe character
+Author name and (optional) file-by name, separated with a pipe character
 .Pq Qq First Last|Last, First ,
 with one
 .Fl a
 per author.
+Command line order of options is important only for multiple authors
+.Pq and HTML files ,
+since the first
+.Fl a
+listed is usually considered the primary author by EPUB readers.
 .It Fl d Ar date
 Publishing date (ISO 8601), e.g. July 1999 is
-.Qq 1999\&-07 .
+.Qq 1999-07 .
 .It Fl s Ar subject
 Subject(s), zero or more, one
 .Fl s
@@ -160,7 +169,10 @@ set, this app will expect the cover image at
 OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html OEBPS/default.css
 .Pp
 .Xr make 1
-is an excellent tool for building and updating EPUBs with this script.
+is an excellent tool for building and updating EPUBs with this script, but, depending on how you
+provide the HTML file names to make, you may want to
+.Ic $(sort)
+the file names to keep the files in order.
 .Sh SEE ALSO
 .Xr epubcheck 1 , Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
 .Pp
