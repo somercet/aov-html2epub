@@ -1,4 +1,4 @@
-# OPS/Text/part-23-chap.xhtml:<!-- TTITLE2    3. The pipes yowled, started to knock. -->
+# OPS/Text/part-03-chap.xhtml:<!-- TTITLE2    3. Lorem ipsum dolor sit amet, consectetur -->
 
 /<!--[ 	]+TTITLE/ {
 s/<!--[ 	]+//
