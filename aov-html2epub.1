@@ -1,6 +1,6 @@
 .Dd June 21, 2020
 .Os Unix
-.Dt aov-html2epub 1 "User Commands"
+.Dt aov-html2epub 1 URM
 .Sh NAME
 .Nm aov-html2epub
 .Nd Takes a list of HTML5 files and turns them into an EPUB, version 3, with back-compatibility for v2.
@@ -8,11 +8,10 @@
 .Nm
 .Ar EPUB_FILE
 .Fl t Ar title
-.Op Fl a Ar name
-.Op Fl f Ar filebyname
+.Op Fl a Ar name Ns Op Ar "|filebyname"
 .Op Fl d Ar date
 .Op Fl s Ar subject
-.Op Fl p Ar creator
+.Op Fl p Ar maker
 .Op Fl P Ar publisher
 .Op Fl T Ar translator
 .Op Fl c Ar cover.img
@@ -48,13 +47,15 @@ files specified on the command line, in that order, will be added as content.
 Tables of contents for versions 2 and 3 are generated for the HTML files.
 Nested TOCs are supported.
 .Pp
+Subjects, authors, and titles may be specified more than once.
+.Pp
 .Nm
 generates these files, which are all deleted after the EPUB is built:
 .Bd -ragged -offset indent
 .Bl -column
 .It mimetype Ta container.xml
-.It content.opf Ta titlepage.xhtml
-.It toc.xhtml Ta toc.ncx
+.It toc.ncx Ta content.opf
+.It toc.xhtml Ta titlepage.xhtml
 .El
 .Ed
 .Pp
@@ -66,7 +67,8 @@ will use it instead of creating and deleting its own.
 If the file
 .Pa description
 exists, it will be added to the manifest's “dc:description” section.
-It should be one or more lines of UTF-8 text and contain no HTML (a final newline is not required).
+It should be one or more lines of UTF-8 text and contain no HTML
+.Pq a final newline is not required .
 .Pp
 .Xr file 1
 is used to generate the MIME types of non-HTML files.
@@ -79,11 +81,15 @@ is not specified,
 will be used to generate a random UUID, if present.
 For consistency, generate a single random UUID for each book and specify it on each build.
 .Pp
-The EPUB standard allows the OPF file (and every other file) to be in the base directory of the ZIP file, along with
+The EPUB standard allows the OPF file
+.Pq and every other file
+to be in the base directory of the ZIP file, along with
 .Pa mimetype
 and
 .Pa META-INF .
-But it is cleaner and more correct to place it (and the other generated files) in a subdirectory, canonically
+But it is cleaner and more correct to place it
+.Pq and the other generated files
+in a subdirectory, canonically
 .Pa OPS
 or
 .Pa OEBPS .
@@ -94,19 +100,24 @@ No ungenerated files are moved or deleted by this program.
 .Sh OPTIONS
 .Bl -tag
 .It Fl t Ar title
-Book title,
-.Em required
-.It Fl a Ar name
-Author name, "First Last"
-.It Fl f Ar filebyname
-Author name, "Last, First"
+Book title, one
+.Pq or more
+is
+.Em required .
+.It Fl a Ar name Ns Op Ar |filebyname
+Author name(s), zero or more, and (optional) file-by name, separated with a pipe character
+.Pq Qq First Last|Last, First ,
+with one
+.Fl a
+per author.
 .It Fl d Ar date
-Publishing date (ISO 8601), e.g. July 1999 is "1999\&-07"
+Publishing date (ISO 8601), e.g. July 1999 is
+.Qq 1999\&-07 .
 .It Fl s Ar subject
-Subject(s) (zero or more, one
+Subject(s), zero or more, one
 .Fl s
-per subject)
-.It Fl p Ar creator
+per subject.
+.It Fl p Ar maker
 EPUB creator
 .It Fl P Ar publisher
 Publishing house
@@ -115,13 +126,18 @@ Translator
 .It Fl c Ar cover.img
 Cover image
 .It Fl l Ar lang
-Language (RFC 4646, default "en-US")
+Language
+.Po BCP 47, default
+.Qq en-US
+.Pc
 .It Fl L Ar license
-Content copyright or license, default "none"
+Content copyright or license, default
+.Qq CC BY-SA 4.0
 .It Fl u Ar uuid
 Universal Unique ID
 .It Fl D Ar subdir
-Build subdirectory (OPS or OEBPS)
+Build subdirectory
+.Pq OPS or OEBPS
 .It Fl -debug
 Do not delete generated files
 .El
@@ -130,22 +146,27 @@ The simplest example:
 .Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html part2.html part3.html
 .Pp
 A more complex example:
-.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross\&" -f \&"Ross, Bob\&" \
+.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross|Ross, Bob\&" \
 -d 2001-12 -s Painting -s Trees -c treecover.jpg -u c5be00f9-932e-4903-8cd9-b4b5939411a6 \
 -P \&"Happy Tree Publishing House\&" part1.html part2.html part3.html treesnewroman.ttf default.css
 .Pp
 A simple example using the
 .Pa OEBPS
-subdirectory. Note: with 
+subdirectory. Note: with
 .Fl D Ar OEBPS
 set, this app will expect the cover image at
 .Pa OEBPS/treecover.jpg :
-.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -D OEBPS -c treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html OEBPS/default.css
+.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -D OEBPS -c treecover.jpg \
+OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html OEBPS/default.css
 .Pp
 .Xr make 1
 is an excellent tool for building and updating EPUBs with this script.
 .Sh SEE ALSO
-.Xr epubcheck 1 , zip 1 , Xr uuidgen 1 , Xr file 1 .
+.Xr epubcheck 1 , Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
+.Pp
+.Lk https://tools.ietf.org/html/bcp47 IETF BCP 47, “Tags for Identifying Languages”
+.Pp
+.Lk https://tools.ietf.org/html/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
 .Sh LICENSE
 “Released under the public domain. Use as you want, specially for evil.”
 This program is publicly available at

@@ -9,22 +9,18 @@
 
 LIB="$HOME/bin/epub3"
 
-declare -a SUBJECT
+declare -a SUBJECT IMAGE AUTHOR TITLE
 
 EPUB=""
-TITLE=""
-AUTHOR=""
-FILEAS=""
 COVER=""
 HTML=""
 CSS=""
 TTF=""
-IMAGE=""
 ELANG="en-US"
-CREATOR=""
+MAKER=""
 TRANSLATOR=""
 PUBLISHER=""
-LICENSE="none"
+LICENSE="Creative Commons BY-SA 4.0 License"
 UUID=""
 OPS=""
 DEBUG=false
@@ -38,15 +34,14 @@ Usage: $( basename $0 ) EPUB_FILE -t "title" [OPTION]... [FILE]...
 
 Options:
  -t title            Title *required*
- -a author           Author 'First Last'
- -f file-as          Author 'Last, First'
+ -a author           Author 'First Last[|Last, First]'
  -s subject          Subject(s)
- -p creator          EPUB maker
+ -p maker            EPUB maker
  -P publisher        Publisher
  -T translator       Translator
  -d date             First published date (ISO 8601)
  -c cover.img        Cover image
- -l lang             Language (RFC 4646, default "en-US")
+ -l lang             Language (BCP 47, default "en-US")
  -L licence          Copyright or license, default "none"
  -u UUID             Universal Unique ID
  -D OPS              Build subdirectory (OPS or OEBPS)
@@ -54,16 +49,16 @@ Options:
 EOM
 }
 
+
 # parse arguments
 while [[ $# -ne 0 ]]
 do
     case $1 in
-    -t)         TITLE="$2"                      ; shift ;;
-    -a)         AUTHOR="$2"                     ; shift ;;
-    -f)         FILEAS="$2"                     ; shift ;;
+    -t)         TITLE+=("$2")                   ; shift ;;
+    -a)         AUTHOR+=("$2")                  ; shift ;;
     -c)         COVER="$2"                      ; shift ;;
     -l)         ELANG="$2"                      ; shift ;;
-    -p)         CREATOR="$2"                    ; shift ;;
+    -p)         MAKER="$2"                      ; shift ;;
     -P)         PUBLISHER="$2"                  ; shift ;;
     -T)         TRANSLATOR="$2"                 ; shift ;;
     -u)         UUID="$2"                       ; shift ;;
@@ -76,7 +71,7 @@ do
     *.xhtml | *.html)
                 HTML="${HTML} $1"                       ;;
     *.jpg | *.png | *.gif)
-                IMAGE="${IMAGE} $1"                     ;;
+                IMAGE+=("$1")                           ;;
     *.ttf | *.woff)
                 TTF="${TTF} $1"                         ;;
     *.css)      CSS="${CSS} $1"                         ;;
@@ -131,6 +126,16 @@ echo '  </container>'
 
 FILES="META-INF/container.xml"
 
+AUTHORMUNGE=""
+for (( c=${#AUTHOR[@]} - 1 ; $c > -1 ; c-- )) ; do
+	if [[ c -gt 0 ]] ; then
+		j="${join:- and }"
+	else
+		j=""
+	fi
+	AUTHORMUNGE="${j}${AUTHOR[${c}]%|*}${AUTHORMUNGE}"
+	join=", "
+done
 
 # write titlepage.xhtml
 if [[ -r ${OPS}titlepage.xhtml ]] ; then
@@ -140,7 +145,7 @@ else
     echo '<!DOCTYPE html>'
     echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${ELANG}'">'
     echo '<head><meta content="text/html; charset=utf-8" http-equiv="Content-Type" />'
-    echo '  <title>'${TITLE} - ${AUTHOR}'</title>'
+    echo '  <title>'${TITLE[@]} - ${AUTHORMUNGE}'</title>'
     for f in ${CSS} ; do
         echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
     done
@@ -148,9 +153,9 @@ else
     echo '<!-- TTITLE Cover -->'
 
     if [[ -n "$COVER" ]] ; then
-        echo '<div style="margin: 2% 0%; width: 100%; text-align: center;"><img src="'${COVER}'" alt="'${TITLE} by ${AUTHOR}'" /></div>'
+        echo '<div style="margin: 2% 0%; width: 100%; text-align: center;"><img src="'${COVER}'" alt="'${TITLE[@]} by ${AUTHORMUNGE}'" /></div>'
     else
-        echo '<h1>'${TITLE}'</h1><h2>'${AUTHOR}'</h2>'
+        echo '<h1>'${TITLE[@]}'</h1><h2>'${AUTHORMUNGE}'</h2>'
     fi
 
     echo '</body></html>'
@@ -170,15 +175,19 @@ echo '    <dc:language>'${ELANG}'</dc:language>'
 echo '    <dc:identifier id="pub-id">urn:uuid:'${UUID}'</dc:identifier>'
 echo '      <meta property="dcterms:modified">'$( date -Iseconds -u | sed 's/+00:00/Z/' )'</meta>'
 echo '    <dc:rights>'${LICENSE}'</dc:rights>'
-echo '    <dc:title>'${TITLE}'</dc:title>'
+for f in "${TITLE[@]}" ; do
+    echo '    <dc:title>'${f}'</dc:title>'
+done
 
-if [[ -n "$AUTHOR" ]] ; then
-    echo '    <dc:creator id="author">'${AUTHOR}'</dc:creator>'
-    echo '      <meta property="role" scheme="marc:relators" refines="#author">aut</meta>'
-    if [[ -n "$FILEAS" ]] ; then
-        echo '      <meta property="file-as" refines="#author">'${FILEAS}'</meta>'
+c=0
+for f in "${AUTHOR[@]}" ; do
+    echo '    <dc:creator id="author'${c}'">'${f%|*}'</dc:creator>'
+    echo '      <meta property="role" scheme="marc:relators" refines="#author'${c}'">aut</meta>'
+    if echo "$f" | grep -q '|' ; then
+        echo '      <meta property="file-as" refines="#author'${c}'">'${f#*|}'</meta>'
     fi
-fi
+    let c++
+done
 if [[ -n "$DATE" ]] ; then
     echo '    <dc:date>'${DATE}'</dc:date>'
 fi
@@ -189,8 +198,8 @@ fi
 if [[ -n "$PUBLISHER" ]] ; then
     echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
 fi
-if [[ -n "$CREATOR" ]] ; then
-    echo '    <dc:contributor id="creator">'${CREATOR}'</dc:contributor>'
+if [[ -n "$MAKER" ]] ; then
+    echo '    <dc:contributor id="creator">'${MAKER}'</dc:contributor>'
     echo '      <meta property="role" scheme="marc:relators" refines="#creator">bkp</meta>'
 fi
 for f in "${SUBJECT[@]}" ; do
@@ -210,22 +219,20 @@ if [[ -n "$COVER" ]] ; then
     COVER=${OPS}${COVER}
 fi
 
-echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
-
-for f in ${HTML} ; do
-    echo '    <item href="'${f#${OPS}}'" id="'${f/*\//}'" media-type="application/xhtml+xml" />'
+for f in ${OPS}titlepage.xhtml ${HTML} ; do
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/xhtml+xml" />'
 done
 
 for f in ${CSS} ; do
-    echo '    <item href="'${f#${OPS}}'" id="'${f/*\//}'" media-type="text/css" />'
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="text/css" />'
 done
 
-for f in ${IMAGE} ; do
-    echo '    <item href="'${f#${OPS}}'" id="'${f/*\//}'" media-type="'$( file -b --mime-type ${f} )'" />'
+for f in ${IMAGE[*]} ; do
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="'$( file -b --mime-type ${f} )'" />'
 done
 
 for f in ${TTF} ; do
-    echo '    <item href="'${f#${OPS}}'" id="'${f/*\//}'" media-type="application/octet-stream" />'
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/octet-stream" />'
 done
 
 echo '    <item href="toc.ncx" id="toc.ncx" media-type="application/x-dtbncx+xml" />'
@@ -250,14 +257,13 @@ echo '</package>'
 FILES="${OPS}content.opf ${FILES}"
 
 
-## BEGIN TOC PROCESSING
+
 # write DEPRECATED EPUB2 TOC
 exec 3> ${OPS}toc.ncx
 # write EPUB3 NAV
 exec 4> ${OPS}toc.xhtml
 
-
-{
+{    # BEGIN TOC PROCESSING
 echo '<?xml version="1.0" encoding="utf-8"?>'
 #<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
@@ -269,10 +275,10 @@ echo '    <meta content="0" name="dtb:totalPageCount" />'
 echo '    <meta content="0" name="dtb:maxPageNumber" />'
 echo '  </head>'
 echo '  <docTitle>'
-echo '    <text>'${TITLE}'</text>'
+echo '    <text>'${TITLE[@]}'</text>'
 echo '  </docTitle>'
 echo '  <docAuthor>'
-echo '    <text>'${AUTHOR}'</text>'
+echo '    <text>'${AUTHORMUNGE}'</text>'
 echo '  </docAuthor>'
 echo '  <navMap>'
 echo '    <navPoint id="titlepage.xhtml" playOrder="1">'
@@ -285,7 +291,7 @@ echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
 echo '  xml:lang="'${ELANG}'" lang="'${ELANG}'">'
 echo '<head>'
-echo '  <title>'${TITLE}'</title>'
+echo '  <title>'${TITLE[@]}'</title>'
 for f in ${CSS} ; do
     echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
 done
@@ -332,14 +338,16 @@ do
         echo "$ogap        </ol>" >&4
         echo "$ogap      </li>"   >&4
 
-        ogap=${ogap#  }
+        ogap="${ogap#  }"
         echo "$ogap    </navPoint>" >&3
     done
 
     printf '%s    <navPoint id="%s" playOrder="%d">
 %s      <navLabel><text>%s</text></navLabel>
 %s      <content src="%s" />\n' \
-        "$ngap" "$( basename $f )" "$ID" "$ngap" "${t:=${ID}}" "$ngap" "${f}" >&3
+        "$ngap" "${f##*/}" "$ID" \
+        "$ngap" "${t:=${ID}}" \
+        "$ngap" "${f}" >&3
 
     t=$( echo $t | sed -E 's/([0-9]|[ivxlcdm]|[IVXLCDM])+\. +//' )
 
@@ -382,7 +390,7 @@ sed -ne '/epub:type=.pagebreak/ { s/.* id="// ; s/".*// ; F ; p }' ${HTML} | \
     paste - - | sed -e "s;^${OPS};;" > $plist
 
 
-if [[ $( wc -l < $plist ) -gt 1 ]]
+if [[ -s $plist ]]
 then
     {
     echo
@@ -428,7 +436,7 @@ FILES="${OPS}toc.ncx ${OPS}toc.xhtml $FILES"
 
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -9 ${TTF} ${IMAGE} ${HTML} ${CSS} ${COVER} ${XTRA} ${FILES}
+zip ${EPUB} -X -9 ${TTF} ${IMAGE[*]} ${HTML} ${CSS} ${COVER} ${XTRA} ${FILES}
 
 if ! ${DEBUG} ; then
     rm mimetype ${FILES}
