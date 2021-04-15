@@ -152,12 +152,18 @@ Do not delete generated files
 .El
 .Sh EXAMPLES
 The simplest example:
-.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html part2.html part3.html
+.Bd -literal
+aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html
+part2.html part3.html
+.Ed
 .Pp
 A more complex example:
-.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -a \&"Bob Ross|Ross, Bob\&" \
--d 2001-12 -s Painting -s Trees -c treecover.jpg -u c5be00f9-932e-4903-8cd9-b4b5939411a6 \
--P \&"Happy Tree Publishing House\&" part1.html part2.html part3.html treesnewroman.ttf default.css
+.Bd -literal
+aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees"
+-a "Bob Ross|Ross, Bob" -d 2001-12 -s Painting -s Trees -c treecover.jpg
+-u c5be00f9-932e-4903-8cd9-b4b5939411a6 -P "Happy Tree Publishing House"
+part1.html part2.html part3.html treesnewroman.ttf default.css
+.Ed
 .Pp
 A simple example using the
 .Pa OEBPS
@@ -165,14 +171,81 @@ subdirectory. Note: with
 .Fl D Ar OEBPS
 set, this app will expect the cover image at
 .Pa OEBPS/treecover.jpg :
-.Dl aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -D OEBPS -c treecover.jpg \
-OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html OEBPS/default.css
+.Bd -literal
+aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -D OEBPS
+-c treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html
+OEBPS/default.css
+.Ed
+.Pp
+By default,
+.Nm
+will create flat TOCs with one entry for each HTML file, numbered ordinally.
+.Pq Multiple TOC entries per file is not yet supported.
+To create TOCs with meaningful names and nesting, each file needs an HTML comment containing the
+TTITLE keyword, a nesting number
+.Pq no space ,
+and a phrase, e.g.:
+.Bd -literal
+<!-- TTITLE Preface -->
+<!-- TTITLE Epigraph -->
+<!-- TTITLE1  I. Book I splash page -->
+<!-- TTITLE2    1. The First Bit -->
+<!-- TTITLE3      a. More Of The First -->
+<!-- TTITLE3      b. Even More First -->
+<!-- TTITLE Interlude -->
+<!-- TTITLE1  II. Book II splash page -->
+.Ed
+.Pp
+TTITLE is the same as TTITLE0.
+The extra spaces between the nesting numbers and the phrases are there only as a visual cue.
+Nesting numbers may change by more than one.
+Note the “outline” numbering: the
+.Pa toc.ncx
+file has no numbering, so it needs these, but they are stripped from the
+.Pa toc.xhtml
+file.
+Instead, the base ordered list
+.Pq OL
+is given the CSS class name “epub3toca”, and each subsequent OL is given two class names:
+one numbered for every new OL, and one lettered according to its depth.
+So the CSS classes for the above TTITLE entries would be:
+.Bd -literal
+epub3toca            Preface
+epub3toca            Epigraph
+epub3tocb epub3toc1	I. Book I splash page
+epub3tocc epub3toc2	  1. The First Bit
+epub3tocd epub3toc3	    a. More Of The First
+epub3tocd epub3toc3	    b. Even More First
+epub3toca            Interlude
+epub3tocb epub3toc4	II. Book II splash page
+.Ed
+.Pp
+The CSS files given on the command line are included in the
+.Pa toc.xhtml
+header, so this allows
+fairly easy, fine-grained control over each OL, especially if you also use “li:first-child”
+and “li:last-child”.
+.Pp
+EPUB2 and 3 page lists are also supported.
+.Nm
+looks for pagebreak spans like this:
+.Dl <span epub:type="pagebreak" class="pages" id="page11"></span>
+It then strips off this regex from the
+.Pa id
+element:
+.Dl [pPaAgGeE]+[-_]*
+and uses the remainder as the page number. Note: the above span uses non-HTML XML
+namespaces, so be sure to add:
+.Dl xmlns:epub="http://www.idpf.org/2007/ops"
+to the
+.Pa <html>
+tag.
 .Pp
 .Xr make 1
 is an excellent tool for building and updating EPUBs with this script, but, depending on how you
 provide the HTML file names to make, you may want to
 .Ic $(sort)
-the file names to keep the files in order.
+the file names to keep the files in reading order.
 .Sh SEE ALSO
 .Xr epubcheck 1 , Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
 .Pp
