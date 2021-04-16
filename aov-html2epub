@@ -9,13 +9,10 @@
 
 LIB="$HOME/bin/epub3"
 
-declare -a SUBJECT IMAGE AUTHOR TITLE
+declare -a AUTHOR CSS HTML IMAGE SUBJECT TITLE TTF
 
 EPUB=""
 COVER=""
-HTML=""
-CSS=""
-TTF=""
 ELANG="en-US"
 MAKER=""
 TRANSLATOR=""
@@ -30,60 +27,70 @@ XTRA=""
 
 usage () {
     cat << EOM >> /dev/stderr
-Usage: $( basename $0 ) EPUB_FILE -t "title" [OPTION]... [FILE]...
+Usage: $( basename $0 ) EPUB_FILE -t "title" [OPTION]... FILE...
 
 Options:
  -t title            Title *required*
  -a author           Author 'First Last[|Last, First]'
  -s subject          Subject(s)
- -p maker            EPUB maker
- -P publisher        Publisher
- -T translator       Translator
- -d date             First published date (ISO 8601)
+ -m maker            EPUB maker
+ -p publisher        Publisher
+ -x translator       Translator
  -c cover.img        Cover image
+ -d date             First published date (ISO 8601)
  -l lang             Language (BCP 47, default "en-US")
- -L licence          Copyright or license, default "none"
+ -r licence          Copyright or license, default "none"
  -u UUID             Universal Unique ID
- -D OPS              Build subdirectory (OPS or OEBPS)
+ -b OPS              Build subdirectory (OPS or OEBPS)
  --debug             Keep output files for debugging
 EOM
 }
 
 
 # parse arguments
+shopt -s nocasematch
 while [[ $# -ne 0 ]]
 do
     case $1 in
-    -t)         TITLE+=("$2")                   ; shift ;;
-    -a)         AUTHOR+=("$2")                  ; shift ;;
-    -c)         COVER="$2"                      ; shift ;;
-    -l)         ELANG="$2"                      ; shift ;;
-    -p)         MAKER="$2"                      ; shift ;;
-    -P)         PUBLISHER="$2"                  ; shift ;;
-    -T)         TRANSLATOR="$2"                 ; shift ;;
-    -u)         UUID="$2"                       ; shift ;;
-    -d)         DATE="$2"                       ; shift ;;
-    -L)         LICENSE="$2"                    ; shift ;;
-    -s)         SUBJECT+=("$2")                 ; shift ;;
-    -D)         OPS="$2"                        ; shift ;;
-    --debug)    DEBUG=true                              ;;
-    *.epub)     EPUB="$1"                               ;;
+    -t)		TITLE+=("$2")		; shift ;;
+    -a)		AUTHOR+=("$2")		; shift ;;
+    -s)		SUBJECT+=("$2")		; shift ;;
+    -m)		MAKER="$2"		; shift ;;
+    -p)		PUBLISHER="$2"		; shift ;;
+    -x)		TRANSLATOR="$2"		; shift ;;
+    -c)		COVER="$2"		; shift ;;
+    -d)		DATE="$2"		; shift ;;
+    -l)		ELANG="$2"		; shift ;;
+    -r)		LICENSE="$2"		; shift ;;
+    -u)		UUID="$2"		; shift ;;
+    -b)		OPS="$2"		; shift ;;
+    --debug)	DEBUG=true			;;
+    *.epub)
+	if [[ -z "$EPUB" ]] ; then
+		EPUB="$1"
+	else
+		echo "$0: $EPUB already specified! $1" 1>&2
+		exit 1
+	fi					;;
     *.xhtml | *.html)
-                HTML="${HTML} $1"                       ;;
+		HTML+=("$1")			;;
     *.jpg | *.png | *.gif)
-                IMAGE+=("$1")                           ;;
+		IMAGE+=("$1")			;;
     *.ttf | *.woff)
-                TTF="${TTF} $1"                         ;;
-    *.css)      CSS="${CSS} $1"                         ;;
-    *)          echo "$0: invalid argument $1" > /dev/stderr
-                     usage
-                     exit 1 ;;
+		TTF+=("$1")			;;
+    *.css)
+		CSS+=("$1")			;;
+    *)
+		echo "$0: invalid argument $1" 1>&2
+		usage
+		exit 1				;;
     esac
     shift
 done
+shopt -u nocasematch
 
 {  # error checks
-    if [[ -z "$HTML" ]] ; then
+    if [[ ${#HTML[@]} -eq 0 ]] ; then
         echo "$0: No HTML files; aborting."
         exit 2
     elif [[ -z "$EPUB" ]] ; then
@@ -146,7 +153,7 @@ else
     echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${ELANG}'">'
     echo '<head><meta content="text/html; charset=utf-8" http-equiv="Content-Type" />'
     echo '  <title>'${TITLE[@]} - ${AUTHORMUNGE}'</title>'
-    for f in ${CSS} ; do
+    for f in "${CSS[@]}" ; do
         echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
     done
     echo '</head><body class="titlepage">'
@@ -219,19 +226,19 @@ if [[ -n "$COVER" ]] ; then
     COVER=${OPS}${COVER}
 fi
 
-for f in ${OPS}titlepage.xhtml ${HTML} ; do
+for f in "${OPS}titlepage.xhtml" "${HTML[@]}" ; do
     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/xhtml+xml" />'
 done
 
-for f in ${CSS} ; do
+for f in "${CSS[@]}" ; do
     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="text/css" />'
 done
 
-for f in ${IMAGE[*]} ; do
+for f in "${IMAGE[@]}" ; do
     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="'$( file -b --mime-type ${f} )'" />'
 done
 
-for f in ${TTF} ; do
+for f in "${TTF[@]}" ; do
     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/octet-stream" />'
 done
 
@@ -240,7 +247,7 @@ echo '    <item href="toc.xhtml" id="toc.xhtml" properties="nav" media-type="app
 echo '  </manifest>'
 echo '  <spine toc="toc.ncx">'
 
-for f in titlepage.xhtml toc.xhtml ${HTML} ; do
+for f in titlepage.xhtml toc.xhtml "${HTML[@]}" ; do
     echo '    <itemref idref="'${f/*\//}'" />'
 done
 
@@ -292,7 +299,7 @@ echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org
 echo '  xml:lang="'${ELANG}'" lang="'${ELANG}'">'
 echo '<head>'
 echo '  <title>'${TITLE[@]}'</title>'
-for f in ${CSS} ; do
+for f in "${CSS[@]}" ; do
     echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
 done
 echo '  <meta charset="utf-8" />'
@@ -314,7 +321,7 @@ echo -n '        <li><a epub:type="titlepage" href="titlepage.xhtml">Cover</a>'
 
 oonest=$( mktemp )
 
-sed -Enf $LIB/ttitle.sed ${HTML} | paste - -  | sed -e "s;^${OPS};;" | while IFS="	" read f i t
+sed -Enf $LIB/ttitle.sed "${HTML[@]}" | paste - -  | sed -e "s;^${OPS};;" | while IFS="	" read f i t
 do
     echo ${onest:=0} ${ogap:=} ${oltrack:=1} ${ID:=2} > /dev/null
 
@@ -386,7 +393,7 @@ echo '  </section>'
 ## BEGIN PAGE PROCESSING
 
 plist=$( mktemp )
-sed -ne '/epub:type=.pagebreak/ { s/.* id="// ; s/".*// ; F ; p }' ${HTML} | \
+sed -ne '/epub:type=.pagebreak/ { s/.* id="// ; s/".*// ; F ; p }' "${HTML[@]}" | \
     paste - - | sed -e "s;^${OPS};;" > $plist
 
 
@@ -436,7 +443,7 @@ FILES="${OPS}toc.ncx ${OPS}toc.xhtml $FILES"
 
 
 zip ${EPUB} -X -Z store mimetype
-zip ${EPUB} -X -9 ${TTF} ${IMAGE[*]} ${HTML} ${CSS} ${COVER} ${XTRA} ${FILES}
+zip ${EPUB} -X -9 "${TTF[@]}" "${IMAGE[@]}" "${HTML[@]}" "${CSS[@]}" ${COVER} ${XTRA} ${FILES}
 
 if ! ${DEBUG} ; then
     rm mimetype ${FILES}

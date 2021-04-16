@@ -1,4 +1,4 @@
-.Dd April 14, 2021
+.Dd April 15, 2021
 .Os Unix
 .Dt aov-html2epub 1 URM
 .Sh NAME
@@ -11,14 +11,14 @@
 .Op Fl a Ar name Ns Op Ar |filebyname
 .Op Fl d Ar date
 .Op Fl s Ar subject
-.Op Fl p Ar maker
-.Op Fl P Ar publisher
-.Op Fl T Ar translator
+.Op Fl m Ar maker
+.Op Fl p Ar publisher
+.Op Fl x Ar translator
 .Op Fl c Ar cover.img
 .Op Fl l Ar lang
-.Op Fl L Ar license
+.Op Fl r Ar rights
 .Op Fl u Ar uuid
-.Op Fl D Ar subdir
+.Op Fl b Ar subdir
 .Op Fl -debug
 .Ar
 .Sh DESCRIPTION
@@ -27,24 +27,22 @@ zips
 .Pa *.html
 and other files into an EPUB with a correct
 .Pa mimetype
-file
-.Pq stored, not deflated .
+file (stored, not deflated).
 The only
 .Em requirements
 to build an EPUB are: the EPUB name, a title, and one or more HTML5 files.
-The order of command line options is generally unimportant
+The order of command line arguments is generally unimportant
 .Em except
-to HTML files and the
+to HTML files and, if given more than once, the
 .Fl a Ar author
+and
+.Fl t Ar title
 arguments, see below.
 .Pp
-Tables of contents
-.Pq TOCs
-for EPUB2 and 3 are generated for the HTML files.
+Tables of contents (TOCs) for EPUB2 and 3 are generated for the HTML files.
 Nested TOCs are supported.
 All HTML files will be added to the EPUB reading order
 .Em exactly as given on the command line .
-.Pp
 Font
 .Po
 .Pa *.ttf
@@ -71,8 +69,7 @@ A customized yet basic title page will be generated unless you provide one in th
 If a cover image is provided, it will be the only element visible on the title page.
 If the file
 .Pa description
-exists
-.Pq which should contain one or more lines of UTF-8 text, and no HTML ,
+exists (which should contain one or more lines of UTF-8 text, and no HTML),
 it will be added to the OPF file’s “dc:description” section.
 .Pp
 .Xr file 1
@@ -86,93 +83,84 @@ is not specified,
 will be used to generate a random UUID, if present.
 For consistency, randomly generate a single UUID for each book and specify it each time you build.
 .Pp
-The EPUB standard allows the OPF file
-.Pq and every other file
-to be in the base directory of the ZIP file, along with
+The EPUB standard allows the OPF file (and every other file) to be in the base directory of the ZIP file,
+along with
 .Pa mimetype
 and
 .Pa META-INF/ .
 But it is cleaner and more correct to place these files in a subdirectory, canonically
 .Pa OPS
 or
-.Pa OEBPS .
-Specifying a sub-directory like
-.Fl D Ar OPS
-builds the generated files in that subdir, and sets the correct relative filepaths in the OPF and TOC files.
+.Pa OEBPS ,
+with
+.Fl b Ar OPS ,
+which builds the generated files in that subdir, and sets the correct relative filepaths in the OPF and TOC files.
 .Pp
 No ungenerated files should be moved, modified, or deleted by this program.
 .Sh OPTIONS
 .Bl -tag
 .It Fl t Ar title
-Book title, one
-.Pq or more
-is
+Book title, one (or more) is
 .Em required .
+Command line order will be preserved in the OPF.
 .It Fl a Ar name Ns Op Ar |filebyname
 Author name and (optional) file-by name, separated with a pipe character
 .Pq Qq First Last|Last, First ,
 with one
 .Fl a
 per author.
-Command line order of options is important only for multiple authors
-.Pq and HTML files ,
+Command line order of options is important only for multiple authors (and HTML files),
 since the first
 .Fl a
-listed is usually considered the primary author by EPUB readers.
+listed is considered the primary author by many EPUB readers.
 .It Fl d Ar date
-Publishing date (ISO 8601), e.g. July 1999 is
-.Qq 1999-07 .
+Publishing date (ISO 8601), e.g. July 1999 is "1999-07".
 .It Fl s Ar subject
 Subject(s), zero or more, one
 .Fl s
 per subject.
-.It Fl p Ar maker
+.It Fl m Ar maker
 EPUB creator
-.It Fl P Ar publisher
+.It Fl p Ar publisher
 Publishing house
-.It Fl T Ar translator
+.It Fl x Ar translator
 Translator
 .It Fl c Ar cover.img
 Cover image
 .It Fl l Ar lang
-Language
-.Po BCP 47, default
-.Qq en-US
-.Pc
-.It Fl L Ar license
-Content copyright or license, default
-.Qq CC BY-SA 4.0
+Language (BCP 47), default "en-US"
+.It Fl r Ar rights
+Content copyright or license, default "CC BY-SA 4.0"
 .It Fl u Ar uuid
 Universal Unique ID
-.It Fl D Ar subdir
-Build subdirectory
-.Pq OPS or OEBPS
+.It Fl b Ar subdir
+Build subdirectory (OPS or OEBPS)
 .It Fl -debug
 Do not delete generated files
 .El
 .Sh EXAMPLES
 The simplest example:
 .Bd -literal
-aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" part1.html
+aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees" part1.html
 part2.html part3.html
 .Ed
 .Pp
 A more complex example:
 .Bd -literal
-aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees"
+aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees" default.css
 -a "Bob Ross|Ross, Bob" -d 2001-12 -s Painting -s Trees -c treecover.jpg
--u c5be00f9-932e-4903-8cd9-b4b5939411a6 -P "Happy Tree Publishing House"
-part1.html part2.html part3.html treesnewroman.ttf default.css
+-u c5be00f9-932e-4903-8cd9-b4b5939411a6 -p "Happy Tree Publishing House"
+part1.html part2.html part3.html treesnewroman.ttf
 .Ed
 .Pp
 A simple example using the
 .Pa OEBPS
 subdirectory. Note: with
-.Fl D Ar OEBPS
+.Fl b Ar OEBPS
 set, this app will expect the cover image at
 .Pa OEBPS/treecover.jpg :
 .Bd -literal
-aov-html2epub Ross,_Bob.Happy_Trees.epub -t \&"Happy Trees\&" -D OEBPS
+aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees" -b OEBPS
 -c treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html
 OEBPS/default.css
 .Ed
@@ -180,33 +168,31 @@ OEBPS/default.css
 By default,
 .Nm
 will create flat TOCs with one entry for each HTML file, numbered ordinally.
-.Pq Multiple TOC entries per file is not yet supported.
+(Multiple TOC entries per file is not yet supported.)
 To create TOCs with meaningful names and nesting, each file needs an HTML comment containing the
-TTITLE keyword, a nesting number
-.Pq no space ,
-and a phrase, e.g.:
+TTITLE keyword, a nesting number (no space), and a phrase.
+So the TTITLE lines in the first 8 HTML files may read:
 .Bd -literal
-<!-- TTITLE Preface -->
-<!-- TTITLE Epigraph -->
-<!-- TTITLE1  I. Book I splash page -->
-<!-- TTITLE2    1. The First Bit -->
-<!-- TTITLE3      a. More Of The First -->
-<!-- TTITLE3      b. Even More First -->
-<!-- TTITLE Interlude -->
-<!-- TTITLE1  II. Book II splash page -->
+<!-- TTITLE   Preface -->
+<!-- TTITLE   Epigraph -->
+<!-- TTITLE1    I. Book I splash page -->
+<!-- TTITLE2      1. The First Bit -->
+<!-- TTITLE3        a. More Of The First -->
+<!-- TTITLE3        b. Even More First -->
+<!-- TTITLE   Interlude -->
+<!-- TTITLE1    II. Book II splash page -->
 .Ed
 .Pp
+(The extra spaces between the nesting numbers and the phrases are there only as a visual cue.)
 TTITLE is the same as TTITLE0.
-The extra spaces between the nesting numbers and the phrases are there only as a visual cue.
 Nesting numbers may change by more than one.
 Note the “outline” numbering: the
 .Pa toc.ncx
 file has no numbering, so it needs these, but they are stripped from the
 .Pa toc.xhtml
 file.
-Instead, the base ordered list
-.Pq OL
-is given the CSS class name “epub3toca”, and each subsequent OL is given two class names:
+Instead, the base ordered list (OL) is given the CSS class name “epub3toca”,
+and each subsequent OL is given two class names:
 one numbered for every new OL, and one lettered according to its depth.
 So the CSS classes for the above TTITLE entries would be:
 .Bd -literal
