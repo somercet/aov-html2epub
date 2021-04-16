@@ -109,8 +109,7 @@ Author name and (optional) file-by name, separated with a pipe character
 with one
 .Fl a
 per author.
-Command line order of options is important only for multiple authors (and HTML files),
-since the first
+Command line order is important only for multiple authors, since the first
 .Fl a
 listed is considered the primary author by many EPUB readers.
 .It Fl d Ar date
@@ -171,7 +170,7 @@ will create flat TOCs with one entry for each HTML file, numbered ordinally.
 (Multiple TOC entries per file is not yet supported.)
 To create TOCs with meaningful names and nesting, each file needs an HTML comment containing the
 TTITLE keyword, a nesting number (no space), and a phrase.
-So the TTITLE lines in the first 8 HTML files may read:
+So the TTITLE lines in the first 9 HTML files may read:
 .Bd -literal
 <!-- TTITLE   Preface -->
 <!-- TTITLE   Epigraph -->
@@ -179,6 +178,7 @@ So the TTITLE lines in the first 8 HTML files may read:
 <!-- TTITLE2      1. The First Bit -->
 <!-- TTITLE3        a. More Of The First -->
 <!-- TTITLE3        b. Even More First -->
+<!-- TTITLE2      1. The Second Bit -->
 <!-- TTITLE   Interlude -->
 <!-- TTITLE1    II. Book II splash page -->
 .Ed
@@ -202,6 +202,7 @@ epub3tocb epub3toc1	I. Book I splash page
 epub3tocc epub3toc2	  1. The First Bit
 epub3tocd epub3toc3	    a. More Of The First
 epub3tocd epub3toc3	    b. Even More First
+epub3tocc epub3toc2	  2. The Second Bit
 epub3toca            Interlude
 epub3tocb epub3toc4	II. Book II splash page
 .Ed
