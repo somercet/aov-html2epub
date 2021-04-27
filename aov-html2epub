@@ -277,7 +277,7 @@ echo '<?xml version="1.0" encoding="utf-8"?>'
 #<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
 echo '  <head>'
-echo '    <meta name="dtb:uid" content="'${UUID}'" />'
+echo '    <meta name="dtb:ui" content="'${UUID}'" />'
 echo '    <meta name="dtb:depth" content="0" />'
 echo '    <meta name="dtb:maxPageNumber" content="0" />'
 echo '    <meta name="dtb:totalPageCount" content="0" />'
