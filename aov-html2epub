@@ -266,11 +266,14 @@ echo '</package>'
 FILES="${OPS}content.opf ${FILES}"
 
 
-
 # write DEPRECATED EPUB2 TOC
 exec 3> ${OPS}toc.ncx
 # write EPUB3 NAV
 exec 4> ${OPS}toc.xhtml
+
+if ! awk -f ${LIB}/ttitle.awk ops=$OPS "${HTML[@]}" ; then
+    echo "ttitle.awk error!" > /dev/stderr
+fi
 
 {    # BEGIN TOC PROCESSING
 echo '<?xml version="1.0" encoding="utf-8"?>'
@@ -278,9 +281,9 @@ echo '<?xml version="1.0" encoding="utf-8"?>'
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
 echo '  <head>'
 echo '    <meta name="dtb:ui" content="'${UUID}'" />'
-echo '    <meta name="dtb:depth" content="0" />'
-echo '    <meta name="dtb:maxPageNumber" content="0" />'
-echo '    <meta name="dtb:totalPageCount" content="0" />'
+echo '    <meta name="dtb:depth" content="'$( cut -f1 toc2_dtbMeta_TMP )'" />'
+echo '    <meta name="dtb:maxPageNumber" content="'$( cut -f2 toc2_dtbMeta_TMP )'" />'
+echo '    <meta name="dtb:totalPageCount" content="'$( cut -f3 toc2_dtbMeta_TMP )'" />'
 echo '    <meta name="dtb:generator" content="aov-html2epub" />'
 echo '  </head>'
 echo '  <docTitle>'
@@ -289,10 +292,6 @@ echo '  </docTitle>'
 echo '  <docAuthor>'
 echo '    <text>'${AUTHORMUNGE}'</text>'
 echo '  </docAuthor>'
-echo '  <navMap>'
-echo '    <navPoint id="titlepage.xhtml" playOrder="1">'
-echo '      <navLabel><text>Title page</text></navLabel>'
-echo '      <content src="titlepage.xhtml" />'
 } >&3
 
 {
@@ -311,96 +310,15 @@ echo '  <section class="toc" epub:type="toc">'
 echo '    <header>'
 echo '      <h2>Contents</h2>'
 echo '    </header>'
-echo '    <nav epub:type="toc" id="toc">'
-echo '      <ol class="epub3toca">'
-echo -n '        <li><a epub:type="titlepage" href="titlepage.xhtml">Cover</a>'
 } >&4
 
 
-# XHTML IDs: match  [A-Za-z][A-Za-z0-9:_.-]*
-# https://www.w3.org/TR/xhtml1/#C_8
-# HTML5 IDs: unique in the document; no spaces; at least one char
+cat toc2_1toc_TMP >&3
+cat toc3_1toc_TMP >&4
 
-oonest=$( mktemp )
-
-
-sed -Enf $LIB/ttitle.sed "${HTML[@]}" | paste - -  | sed -e "s;^${OPS};;" | while IFS="	" read f i t
-do
-    echo ${onest:=0} ${ogap:=} ${oltrack:=1} ${ID:=2} > /dev/null
-
-    ngap="$( printf '%*s' $(( $i * 2 )) )"
-
-    if [[ $onest -ge $i ]]; then
-        echo "$ogap    </navPoint>" >&3
-
-        echo '</li>' >&4
-    fi
-
-    for (( ; $onest < $i ; onest++ )) ; do
-        #echo >&3
-
-        printf '\n%s        <ol class="epub3toc%s epub3toc%d">\n' \
-            "$ngap" $( awk 'BEGIN { printf "%c", 97+'${i}'}' ) ${oltrack} >&4
-        let oltrack++
-    done
-
-    for (( ; $onest > $i ; onest-- )) ; do
-        echo "$ogap        </ol>" >&4
-        echo "$ogap      </li>"   >&4
-
-        ogap="${ogap#  }"
-        echo "$ogap    </navPoint>" >&3
-    done
-
-    printf '%s    <navPoint id="%s" playOrder="%d">
-%s      <navLabel><text>%s</text></navLabel>
-%s      <content src="%s" />\n' \
-        "$ngap" "${f##*/}" "$ID" \
-        "$ngap" "$t" \
-        "$ngap" "$f" >&3
-
-    t=$( echo $t | sed -E 's/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +//' )
-
-    printf '%s        <li><a epub:type="chapter" href="%s">%s</a>' \
-        "$ngap" "$f" "$t" >&4
-
-    echo -n $onest > $oonest
-    ogap="$ngap"
-
-    let ID++
-
-done
-
-echo '</li>' >&4
-
-onest=$( cat $oonest )
-for (( ; $onest > 0 ; onest-- )) ; do
-    ogap=$( printf '%*s' $(( ${onest}    * 2 )) )
-    echo "$ogap    </navPoint>" >&3
-
-    echo "$ogap        </ol>" >&4
-    echo "$ogap      </li>"   >&4
-done
-
-{
-echo '    </navPoint>'
-echo '  </navMap>'
-} >&3
-
-{
-echo '      </ol>'
-echo '    </nav>'
-echo '  </section>'
-} >&4
 
 ## BEGIN PAGE PROCESSING
-
-plist=$( mktemp )
-sed -ne '/epub:type=.pagebreak/ { s/.* id="// ; s/".*// ; F ; p }' "${HTML[@]}" | \
-    paste - - | sed -e "s;^${OPS};;" > $plist
-
-
-if [[ -s $plist ]]
+if [[ -s toc3_2pagelist_TMP ]]
 then
     {
     echo
@@ -409,28 +327,19 @@ then
     echo '      <text>Pages</text>'
     echo '    </navLabel>'
 
-    sed -E -e 's/	.*/&&/' -e 's;	[pPaAgGeE]+[-_]*;	;' $plist | while IFS='	' read f n p
-    do
-        # leaving out playOrder for now
-        printf '    <pageTarget type="normal" id="%s" value="%s">
-      <navLabel><text>%s</text></navLabel>
-      <content src="%s#%s"/>
-    </pageTarget>\n' ${p} ${n} ${n} "${f}" ${p}
-    done
-
+    cat toc2_2pagelist_TMP
     echo '  </pageList>'
     } >&3
 
     {
     echo '  <nav epub:type="page-list" hidden="hidden">'
     echo '    <ol class="epub3pagelist">'
-    sed -E -e 's/	.*/&&/' -e 's;^;      <li><a href=";' -e 's;	;#;' \
-           -e 's;	;">&;'  -e 's;	[pPaAgGeE]+[-_]*;;'   -e 's;$;</a></li>;' $plist
+
+    cat toc3_2pagelist_TMP
     echo '    </ol>'
     echo '  </nav>'
     } >&4
 fi
-
 # END PAGE PROCESSING
 
 echo '</ncx>' >&3
@@ -438,10 +347,10 @@ echo '</ncx>' >&3
 printf '</body>\n</html>\n' >&4
 
 exec 3>&- 4>&-
-rm $oonest $plist
 
 FILES="${OPS}toc.ncx ${OPS}toc.xhtml $FILES"
 
+rm toc?_*_TMP
 # END TOC PROCESSING
 
 
