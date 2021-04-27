@@ -31,4 +31,3 @@ s;	;">\n      <navLabel><text>;
 s;	;</text></navLabel>\n      <content src=";
 s;	;#;
 s;$;" />\n    </pageTarget>;
-

@@ -39,7 +39,7 @@ Options:
  -c cover.img        Cover image
  -d date             First published date (ISO 8601)
  -l lang             Language (BCP 47, default "en-US")
- -r licence          Copyright or license, default "none"
+ -r rights           Copyright or license, default "CC BY-SA 4.0"
  -u UUID             Universal Unique ID
  -b OPS              Build subdirectory (OPS or OEBPS)
  --debug             Keep output files for debugging
@@ -134,14 +134,16 @@ echo '  </container>'
 FILES="META-INF/container.xml"
 
 AUTHORMUNGE=""
-for (( c=${#AUTHOR[@]} - 1 ; $c > -1 ; c-- )) ; do
-	if [[ c -gt 0 ]] ; then
-		j="${join:- and }"
-	else
-		j=""
-	fi
-	AUTHORMUNGE="${j}${AUTHOR[${c}]%|*}${AUTHORMUNGE}"
-	join=", "
+for (( c=${#AUTHOR[@]} ; $c > 0 ; ))
+do
+    let c--
+    if [[ c -gt 0 ]] ; then
+        join="${join:- and }"
+    else
+        join=""
+    fi
+    AUTHORMUNGE="${join}${AUTHOR[${c}]%|*}${AUTHORMUNGE}"
+    join=", "
 done
 
 # write titlepage.xhtml
@@ -275,11 +277,11 @@ echo '<?xml version="1.0" encoding="utf-8"?>'
 #<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
 echo '  <head>'
-echo '    <meta content="'${UUID}'" name="dtb:ui" />'
-echo '    <meta content="2" name="dtb:depth" />'
-echo '    <meta content="aov-html2epub" name="dtb:generator" />'
-echo '    <meta content="0" name="dtb:totalPageCount" />'
-echo '    <meta content="0" name="dtb:maxPageNumber" />'
+echo '    <meta name="dtb:uid" content="'${UUID}'" />'
+echo '    <meta name="dtb:depth" content="0" />'
+echo '    <meta name="dtb:maxPageNumber" content="0" />'
+echo '    <meta name="dtb:totalPageCount" content="0" />'
+echo '    <meta name="dtb:generator" content="aov-html2epub" />'
 echo '  </head>'
 echo '  <docTitle>'
 echo '    <text>'${TITLE[@]}'</text>'
@@ -321,13 +323,14 @@ echo -n '        <li><a epub:type="titlepage" href="titlepage.xhtml">Cover</a>'
 
 oonest=$( mktemp )
 
+
 sed -Enf $LIB/ttitle.sed "${HTML[@]}" | paste - -  | sed -e "s;^${OPS};;" | while IFS="	" read f i t
 do
     echo ${onest:=0} ${ogap:=} ${oltrack:=1} ${ID:=2} > /dev/null
 
     ngap="$( printf '%*s' $(( $i * 2 )) )"
 
-    if (( $onest >= $i )); then
+    if [[ $onest -ge $i ]]; then
         echo "$ogap    </navPoint>" >&3
 
         echo '</li>' >&4
@@ -353,13 +356,13 @@ do
 %s      <navLabel><text>%s</text></navLabel>
 %s      <content src="%s" />\n' \
         "$ngap" "${f##*/}" "$ID" \
-        "$ngap" "${t:=${ID}}" \
-        "$ngap" "${f}" >&3
+        "$ngap" "$t" \
+        "$ngap" "$f" >&3
 
-    t=$( echo $t | sed -E 's/([0-9]|[ivxlcdm]|[IVXLCDM])+\. +//' )
+    t=$( echo $t | sed -E 's/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +//' )
 
     printf '%s        <li><a epub:type="chapter" href="%s">%s</a>' \
-        "$ngap" "${f}" "$t" >&4
+        "$ngap" "$f" "$t" >&4
 
     echo -n $onest > $oonest
     ogap="$ngap"
@@ -420,7 +423,7 @@ then
 
     {
     echo '  <nav epub:type="page-list" hidden="hidden">'
-    echo '    <ol>'
+    echo '    <ol class="epub3pagelist">'
     sed -E -e 's/	.*/&&/' -e 's;^;      <li><a href=";' -e 's;	;#;' \
            -e 's;	;">&;'  -e 's;	[pPaAgGeE]+[-_]*;;'   -e 's;$;</a></li>;' $plist
     echo '    </ol>'

@@ -229,8 +229,9 @@ to the
 tag.
 .Pp
 .Xr make 1
-is an excellent tool for building and updating EPUBs with this script, but, depending on how you
-provide the HTML file names to make, you may want to
+is an excellent tool for building and updating EPUBs with this script, but, if you use
+.Ic $(wildcard)
+to import the HTML file names into make, you may want to
 .Ic $(sort)
 the file names to keep the files in reading order.
 .Sh SEE ALSO
