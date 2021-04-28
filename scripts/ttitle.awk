@@ -26,12 +26,12 @@ BEGIN {
 		"      <ol class=\"epub3toca\">\n"	\
 		"        <li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"	\
 		> tocX
-#	sub(/\/$/, "\\/", ops)
-	sub(/\//, "", ops)
-	sub(/^/, "/", ops)
-	sub(/$/, "\\//", ops)
+	if ( ops ) {
+		sub(/\/$/, "", ops)
+		sub(/^/, "/", ops)
+		sub(/$/, "\\//", ops)
+	}
 	dtbdepth = 0
-	dtbmPN = 0
 	dtbtPC = 0
 }
 
@@ -39,7 +39,8 @@ BEGINFILE {
 	ttout = 0
 	ttresult = 0
 	fn = FILENAME
-	sub(ops, "", fn)
+	if ( ops )
+		sub(ops, "", fn)
 	fnID = fn
 #	gsub(/[^[:alnum:]]/, "", fnID)
 	sub(/.*\//, "", fnID)
@@ -54,18 +55,24 @@ BEGINFILE {
 	gsub(/	/, " ")
 	gsub(/  +/, " ")
 	sub(/ -->.*/, "")
-	sub(/^.*<!-- +/, "")
-	sub(/^TTITLE /, "0 ")
-	sub(/^TTITLE/, "")
+	sub(/^.*<!-- +TTITLE /, "0 ")
+	sub(/^.*<!-- +TTITLE/, "")
 	sub(/ /, "	")
-	ttresult = split($0, parts, "	")
-	if ( ttresult < 2 )
+	ttresult = split($0, parts, /	/)
+	if ( ttresult < 2 || parts[1] !~ /^[0-9]+$/ )
 		printf "Malformed TTITLE in \"%s\".\n", FILENAME > "/dev/stderr"
+	if ( parts[2] ~ /</ ) {
+		gsub(/</, "", parts[2])
+	}
+	if ( parts[1] ~ /["<]/ ) {
+		gsub(/[<"]/, "", parts[2])
+	}
 
 	ngap = sprintf("%*s",  parts[1] * 2, "")
 
-	if ( dtbdepth < parts[1] )
+	if ( dtbdepth ~ /^[0-9]+$/ && dtbdepth < parts[1] )
 		dtbdepth = parts[1]
+
 
 	if ( onest >= parts[1] ) {
 		printf "%s    </navPoint>\n", ogap > tocN
@@ -119,21 +126,23 @@ BEGINFILE {
 
 	printf	"      <li><a href=\"%s#%s\">%s</a></li>\n", fn, $0, pagenum > e3pl
 	dtbtPC++
-	dtbmPN = pagenum
 }
 
 
 ENDFILE {
 	if ( ttresult < 2 || ttout == 0 ) {
-		printf	"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"	\
+		printf	"%s    </navPoint>\n"				\
+			"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"	\
 			"%s      <navLabel><text>%s</text></navLabel>\n" \
 			"%s      <content src=\"%s\" />\n",		\
+			ogap,						\
 			ogap, fnID, count,				\
 			ogap, count,					\
 			ogap, fn > tocN
 
-		printf "%s        <li><a epub:type=\"chapter\" href=\"%s\">%s</a>", \
-			ogap, fn, count > tocX
+		printf	"</li>\n" \
+			"%s        <li><a epub:type=\"chapter\" href=\"%s\">%s</a>", \
+			ogap, fn, count++ > tocX
 	}
 }
 
@@ -141,7 +150,7 @@ ENDFILE {
 END {
 	printf "</li>\n" > tocX
 
-	printf "%d	%d	%d", dtbdepth + 1, dtbmPN, dtbtPC > e2dtb
+	printf "%d	%d	%d", dtbdepth + 1, pagenum, dtbtPC > e2dtb
 
 	for ( ; onest > 0 ; onest-- ) {
 		printf	"%s    </navPoint>\n", ogap > tocN
