@@ -159,12 +159,13 @@ else
         echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
     done
     echo '</head><body class="titlepage">'
-    echo '<!-- TTITLE Cover -->'
 
     if [[ -n "$COVER" ]] ; then
-        echo '<div style="margin: 2% 0%; width: 100%; text-align: center;"><img src="'${COVER}'" alt="'${TITLE[@]} by ${AUTHORMUNGE}'" /></div>'
+        echo '<!-- TTITLE Cover -->'
+        echo '<div style="margin: 2% 0%; width: 100%; text-align: center;"><img src="'${COVER#${OPS}}'" alt="'${TITLE[@]} by ${AUTHORMUNGE}'" /></div>'
     else
-        echo '<h1>'${TITLE[@]}'</h1><h2>'${AUTHORMUNGE}'</h2>'
+        echo '<!-- TTITLE Title page -->'
+        echo -e '<h1>'${TITLE[@]}'</h1>\n<h2>'${AUTHORMUNGE}'</h2>'
     fi
 
     echo '</body></html>'
@@ -191,7 +192,7 @@ done
 c=0
 for f in "${AUTHOR[@]}" ; do
     echo '    <dc:creator id="author'${c}'">'${f%|*}'</dc:creator>'
-    echo '      <meta property="role" scheme="marc:relators" refines="#author'${c}'">aut</meta>'
+    echo '      <meta property="role" refines="#author'${c}'" scheme="marc:relators">aut</meta>'
     if echo "$f" | grep -q '|' ; then
         echo '      <meta property="file-as" refines="#author'${c}'">'${f#*|}'</meta>'
     fi
@@ -202,14 +203,14 @@ if [[ -n "$DATE" ]] ; then
 fi
 if [[ -n "$TRANSLATOR" ]] ; then
     echo '    <dc:contributor id="translator">'${TRANSLATOR}'</dc:contributor>'
-    echo '      <meta property="role" scheme="marc:relators" refines="#translator">trl</meta>'
+    echo '      <meta property="role" refines="#translator" scheme="marc:relators">trl</meta>'
 fi
 if [[ -n "$PUBLISHER" ]] ; then
     echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
 fi
 if [[ -n "$MAKER" ]] ; then
     echo '    <dc:contributor id="creator">'${MAKER}'</dc:contributor>'
-    echo '      <meta property="role" scheme="marc:relators" refines="#creator">bkp</meta>'
+    echo '      <meta property="role" refines="#creator" scheme="marc:relators">bkp</meta>'
 fi
 for f in "${SUBJECT[@]}" ; do
     echo '    <dc:subject>'${f}'</dc:subject>'
@@ -224,8 +225,7 @@ echo '  </metadata>'
 echo '  <manifest>'
 
 if [[ -n "$COVER" ]] ; then
-    echo '    <item href="'${COVER}'" id="cover" properties="cover-image" media-type="'$( file -b --mime-type ${OPS}${COVER} )'" />'
-    COVER=${OPS}${COVER}
+    echo '    <item href="'${COVER#${OPS}}'" id="cover" properties="cover-image" media-type="'$( file -b --mime-type ${COVER} )'" />'
 fi
 
 for f in "${OPS}titlepage.xhtml" "${HTML[@]}" ; do
@@ -271,7 +271,7 @@ exec 3> ${OPS}toc.ncx
 # write EPUB3 NAV
 exec 4> ${OPS}toc.xhtml
 
-if ! awk -f ${LIB}/ttitle.awk ops=$OPS "${HTML[@]}" ; then
+if ! awk -f ${LIB}/ttitle.awk -- ops=$OPS "${HTML[@]}" ; then
     echo "ttitle.awk error!" > /dev/stderr
 fi
 

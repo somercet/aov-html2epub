@@ -133,7 +133,10 @@ Content copyright or license, default "CC BY-SA 4.0"
 .It Fl u Ar uuid
 Universal Unique ID
 .It Fl b Ar subdir
-Build subdirectory (OPS or OEBPS)
+Build subdirectory (OPS or OEBPS).
+Strictly speaking, this means “create
+.Pa content.opf
+in this directory, and edit its relative paths to all files accordingly.”
 .It Fl -debug
 Do not delete generated files
 .El
@@ -154,13 +157,10 @@ part1.html part2.html part3.html treesnewroman.ttf
 .Pp
 A simple example using the
 .Pa OEBPS
-subdirectory. Note: with
-.Fl b Ar OEBPS
-set, this app will expect the cover image at
-.Pa OEBPS/treecover.jpg :
+subdirectory.
 .Bd -literal
 aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees" -b OEBPS
--c treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html
+-c OEBPS/treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html
 OEBPS/default.css
 .Ed
 .Pp
