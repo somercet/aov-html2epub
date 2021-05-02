@@ -275,15 +275,17 @@ if ! awk -f ${LIB}/ttitle.awk -- ops=$OPS "${HTML[@]}" ; then
     echo "ttitle.awk error!" > /dev/stderr
 fi
 
+. toc2_dtbMeta_TMP
+
 {    # BEGIN TOC PROCESSING
 echo '<?xml version="1.0" encoding="utf-8"?>'
 #<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
 echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
 echo '  <head>'
 echo '    <meta name="dtb:ui" content="'${UUID}'" />'
-echo '    <meta name="dtb:depth" content="'$( cut -f1 toc2_dtbMeta_TMP )'" />'
-echo '    <meta name="dtb:maxPageNumber" content="'$( cut -f2 toc2_dtbMeta_TMP )'" />'
-echo '    <meta name="dtb:totalPageCount" content="'$( cut -f3 toc2_dtbMeta_TMP )'" />'
+echo '    <meta name="dtb:depth" content="'${ncxvals[0]}'" />'
+echo '    <meta name="dtb:maxPageNumber" content="'${ncxvals[1]}'" />'
+echo '    <meta name="dtb:totalPageCount" content="'${ncxvals[2]}'" />'
 echo '    <meta name="dtb:generator" content="aov-html2epub" />'
 echo '  </head>'
 echo '  <docTitle>'
@@ -306,10 +308,6 @@ done
 echo '  <meta charset="utf-8" />'
 echo '</head>'
 echo '<body>'
-echo '  <section class="toc" epub:type="toc">'
-echo '    <header>'
-echo '      <h2>Contents</h2>'
-echo '    </header>'
 } >&4
 
 
@@ -332,6 +330,7 @@ then
     } >&3
 
     {
+    echo
     echo '  <nav epub:type="page-list" hidden="hidden">'
     echo '    <ol class="epub3pagelist">'
 
