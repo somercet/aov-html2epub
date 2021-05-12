@@ -1,16 +1,8 @@
 #! /usr/bin/env -S gawk -f
 
-#e2tocpf(gap, filen, fileID, c, tx) {
-#	return sprintf( \
-#		"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"	\
-#		"%s      <navLabel><text>%s</text></navLabel>\n"\
-#		"%s      <content src=\"%s\" />\n",		\
-#		gap, fileID, c,	\
-#		gap, tx,		\
-#		gap, filen)
-#}
 
 BEGIN {
+
 e2tocpf = "%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"  \
 	"%s      <navLabel><text>%s</text></navLabel>\n" \
 	"%s      <content src=\"%s\" />\n"
@@ -57,10 +49,8 @@ e3lot	= "toc3_lot_TMP"
 
 dtbdepth = 0
 dtbtPC = 0
-}
 
 
-BEGIN {
 	printf	"  <navMap>\n"	\
 		"    <navPoint id=\"titlepage.xhtml\" playOrder=\"1\">\n"	\
 		"      <navLabel><text>Title page</text></navLabel>\n"	\
@@ -115,8 +105,10 @@ BEGINFILE {
 	if ( dtbdepth < parts[1] )
 		dtbdepth = parts[1]
 
-	if ( parts[3] ~ /</ )
+	if ( parts[3] ~ /[<"]/ ) {
 		gsub(/</, "&lt;", parts[3])
+		gsub(/"/, "&quot;", parts[3])
+	}
 
 	if ( onest >= parts[1] ) {
 		printf "%s    </navPoint>\n", ogap > e2toc
@@ -154,14 +146,6 @@ BEGINFILE {
 	else
 		epbType = parts[2]
 
-	printf e2tocpf, ngap, fnID, count,	\
-			ngap, parts[3],		\
-			ngap, fn		> e2toc
-
-	sub(/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +/, "", parts[3])
-
-	printf e3tocpf, ngap, epbType, fn, parts[3] > e3toc
-
 	if ( lndmrk ) {
 		if ( epbType == "text" )
 			parts[3] = "Start of text"
@@ -175,6 +159,14 @@ BEGINFILE {
 		printf	"        <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
 			fn, epbType, parts[3] > e3ldmrk
 	}
+
+	printf e2tocpf, ngap, fnID, count,	\
+			ngap, parts[3],		\
+			ngap, fn		> e2toc
+
+	sub(/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +/, "", parts[3])
+
+	printf e3tocpf, ngap, epbType, fn, parts[3] > e3toc
 
 	ogap = ngap
 	onest = parts[1]
@@ -220,11 +212,10 @@ ENDFILE {
 		printf "%s    </navPoint>\n" e2tocpf, \
 			ogap,			\
 			ogap, fnID, count,	\
-			ogap, count		\
+			ogap, count,		\
 			ogap, fn		> e2toc
 
-
-		printf "</li>\n" e3tocpf, ogap, fn, count++ > e3toc
+		printf "</li>\n" e3tocpf, ogap, "chapter", fn, count++ > e3toc
 	}
 }
 
