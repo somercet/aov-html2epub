@@ -33,7 +33,6 @@ etAbbr["ftns"] = "footnotes"
 etAbbr["frwd"] = "foreword"
 etAbbr["glss"] = "glossary"
 etAbbr["intr"] = "introduction"
-etAbbr["pgls"] = "page-list"
 etAbbr["prmb"] = "preamble"
 etAbbr["prfc"] = "preface"
 etAbbr["prlg"] = "prologue"
@@ -173,7 +172,7 @@ BEGINFILE {
 		if ( epbType == "text" )
 			epbType = "bodymatter"
 
-		printf	"      <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
+		printf	"        <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
 			fn, epbType, parts[3] > e3ldmrk
 	}
 
@@ -211,7 +210,7 @@ BEGINFILE {
 		"    </pageTarget>\n",					\
 		$0, pagenum, pagenum, fn, $0 > e2pl
 
-	printf	"      <li><a href=\"%s#%s\">%s</a></li>\n", fn, $0, pagenum > e3pl
+	printf	"        <li><a href=\"%s#%s\">%s</a></li>\n", fn, $0, pagenum > e3pl
 	dtbtPC++
 }
 

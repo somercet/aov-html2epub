@@ -336,12 +336,15 @@ then
 
     {
     echo
-    echo '  <nav epub:type="page-list" hidden="">'
-    echo '    <ol class="epub3pagelist">'
+    echo '  <section class="epub3pagelist">'
+    echo '    <nav epub:type="page-list" hidden="">'
+    echo '      <h2>Page list</h2>'
+    echo '      <ol>'
 
     cat toc3_pagelist_TMP
-    echo '    </ol>'
-    echo '  </nav>'
+    echo '      </ol>'
+    echo '    </nav>'
+    echo '  </section>'
     } >&4
 fi
 # END PAGE PROCESSING
@@ -349,13 +352,16 @@ fi
 # EPUB3 LANDMARKS
 if [[ -s toc3_lndmrk_TMP ]]
 then
-    echo '  <nav epub:type="landmarks" hidden="">'
-    echo '    <h2>Guide</h2>'
-    echo '    <ol>'
+    echo
+    echo '  <section class="epub3landmarks">'
+    echo '    <nav epub:type="landmarks" hidden="">'
+    echo '      <h2>Guide</h2>'
+    echo '      <ol>'
 
     cat toc3_lndmrk_TMP
-    echo '    </ol>'
-    echo '  </nav>'
+    echo '      </ol>'
+    echo '    </nav>'
+    echo '  </section>'
 fi >&4
 
 echo '</ncx>' >&3
