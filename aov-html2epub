@@ -161,10 +161,10 @@ else
     echo '</head><body class="titlepage">'
 
     if [[ -n "$COVER" ]] ; then
-        echo '<!-- TTITLE Cover -->'
+        echo '<!-- NNAV +cover_ Cover -->'
         echo '<div style="margin: 2% 0%; width: 100%; text-align: center;"><img src="'${COVER#${OPS}}'" alt="'${TITLE[@]} by ${AUTHORMUNGE}'" /></div>'
     else
-        echo '<!-- TTITLE Title page -->'
+        echo '<!-- NNAV +ttpg_ Title page -->'
         echo -e '<h1>'${TITLE[@]}'</h1>\n<h2>'${AUTHORMUNGE}'</h2>'
     fi
 
@@ -172,6 +172,11 @@ else
     } > ${OPS}titlepage.xhtml
 
     FILES="${OPS}titlepage.xhtml ${FILES}"
+fi
+
+
+if ! awk -f ${LIB}/ttitle.awk -- RS='>[^<]*<' ops=$OPS "${HTML[@]}" ; then
+    echo "ttitle.awk error!" > /dev/stderr
 fi
 
 
@@ -254,12 +259,15 @@ for f in titlepage.xhtml toc.xhtml "${HTML[@]}" ; do
 done
 
 echo '  </spine>'
-echo '  <guide>'
-#if [[ -n "$COVER" ]] ; then
-#    echo '    <reference href="'${COVER}'" type="cover" title="Cover" />'
-#fi
-echo '    <reference href="titlepage.xhtml" type="title-page" title="Title page" />'
-echo '  </guide>'
+
+if [[ -s toc2_guide_TMP ]]
+then
+    echo '  <guide>'
+
+    cat toc2_guide_TMP
+    echo '  </guide>'
+fi
+
 echo '</package>'
 } > ${OPS}content.opf
 
@@ -271,9 +279,6 @@ exec 3> ${OPS}toc.ncx
 # write EPUB3 NAV
 exec 4> ${OPS}toc.xhtml
 
-if ! awk -f ${LIB}/ttitle.awk -- ops=$OPS "${HTML[@]}" ; then
-    echo "ttitle.awk error!" > /dev/stderr
-fi
 
 . toc2_dtbMeta_TMP
 
@@ -311,12 +316,12 @@ echo '<body>'
 } >&4
 
 
-cat toc2_1toc_TMP >&3
-cat toc3_1toc_TMP >&4
+cat toc2_toc_TMP >&3
+cat toc3_toc_TMP >&4
 
 
 ## BEGIN PAGE PROCESSING
-if [[ -s toc3_2pagelist_TMP ]]
+if [[ -s toc3_pagelist_TMP ]]
 then
     {
     echo
@@ -325,21 +330,33 @@ then
     echo '      <text>Pages</text>'
     echo '    </navLabel>'
 
-    cat toc2_2pagelist_TMP
+    cat toc2_pagelist_TMP
     echo '  </pageList>'
     } >&3
 
     {
     echo
-    echo '  <nav epub:type="page-list" hidden="hidden">'
+    echo '  <nav epub:type="page-list" hidden="">'
     echo '    <ol class="epub3pagelist">'
 
-    cat toc3_2pagelist_TMP
+    cat toc3_pagelist_TMP
     echo '    </ol>'
     echo '  </nav>'
     } >&4
 fi
 # END PAGE PROCESSING
+
+# EPUB3 LANDMARKS
+if [[ -s toc3_lndmrk_TMP ]]
+then
+    echo '  <nav epub:type="landmarks" hidden="">'
+    echo '    <h2>Guide</h2>'
+    echo '    <ol>'
+
+    cat toc3_lndmrk_TMP
+    echo '    </ol>'
+    echo '  </nav>'
+fi >&4
 
 echo '</ncx>' >&3
 

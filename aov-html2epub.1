@@ -24,7 +24,7 @@
 .Sh DESCRIPTION
 .Nm
 zips
-.Pa *.html
+.Pa *.xhtml
 and other files into an EPUB with a correct
 .Pa mimetype
 file (stored, not deflated).
@@ -103,15 +103,13 @@ No ungenerated files should be moved, modified, or deleted by this program.
 Book title, one (or more) is
 .Em required .
 Command line order will be preserved in the OPF.
-.It Fl a Ar name Ns Op Ar |filebyname
-Author name and (optional) file-by name, separated with a pipe character
-.Pq Qq First Last|Last, First ,
-with one
+.It Fl a Ar name Ns Op Ar |fileby-name
+Author name and (optional) file-by name, separated with a pipe
+character ("First Last|Last, First"), with one
 .Fl a
 per author.
-Command line order is important only for multiple authors, since the first
-.Fl a
-listed is considered the primary author by many EPUB readers.
+As with titles, command line order is preserved in the OPF, and the first
+author listed will be considered the primary author by many EPUB readers.
 .It Fl d Ar date
 Publishing date (ISO 8601), e.g. July 1999 is "1999-07".
 .It Fl s Ar subject
@@ -157,7 +155,7 @@ part1.html part2.html part3.html treesnewroman.ttf
 .Pp
 A simple example using the
 .Pa OEBPS
-subdirectory.
+subdirectory:
 .Bd -literal
 aov-html2epub Ross,_Bob.Happy_Trees.epub -t "Happy Trees" -b OEBPS
 -c OEBPS/treecover.jpg OEBPS/part1.html OEBPS/part2.html OEBPS/part3.html
@@ -169,23 +167,23 @@ By default,
 will create flat TOCs with one entry for each HTML file, numbered ordinally.
 (Multiple TOC entries per file is not yet supported.)
 To create TOCs with meaningful names and nesting, each file needs an HTML comment containing the
-TTITLE keyword, a nesting number (no space), and a phrase.
-So the TTITLE lines in the first 9 HTML files may read:
+NNAV keyword, a nesting number and “+” sign, and a phrase.
+So the NNAV lines in the first 9 HTML files may read:
 .Bd -literal
-<!-- TTITLE   Preface -->
-<!-- TTITLE   Epigraph -->
-<!-- TTITLE1    I. Book I splash page -->
-<!-- TTITLE2      1. The First Bit -->
-<!-- TTITLE3        a. More Of The First -->
-<!-- TTITLE3        b. Even More First -->
-<!-- TTITLE2      1. The Second Bit -->
-<!-- TTITLE   Interlude -->
-<!-- TTITLE1    II. Book II splash page -->
+<!-- NNAV  +  Preface -->
+<!-- NNAV  +  Epigraph -->
+<!-- NNAV 1+    I. Book I splash page -->
+<!-- NNAV 2+      1. The First Bit -->
+<!-- NNAV 3+        a. More Of The First -->
+<!-- NNAV 3+        b. Even More First -->
+<!-- NNAV 2+      1. The Second Bit -->
+<!-- NNAV  +  Interlude -->
+<!-- NNAV 1+    II. Book II splash page -->
 .Ed
 .Pp
 (The extra spaces between the nesting numbers and the phrases are there only as a visual cue.)
-TTITLE is the same as TTITLE0.
-Nesting numbers may change by more than one.
+“NNAV +” is the same as “NNAV 0+”.
+Nesting numbers may increase by one at a time, but can decrease arbitrarily.
 Note the “outline” numbering: the
 .Pa toc.ncx
 file has no numbering, so it needs these, but they are stripped from the
@@ -194,7 +192,7 @@ file.
 Instead, the base ordered list (OL) is given the CSS class name “epub3toca”,
 and each subsequent OL is given two class names:
 one numbered for every new OL, and one lettered according to its depth.
-So the CSS classes for the above TTITLE entries would be:
+So the CSS classes for the above NNAV entries would be:
 .Bd -literal
 epub3toca            Preface
 epub3toca            Epigraph
@@ -213,19 +211,43 @@ header, so this allows
 fairly easy, fine-grained control over each OL, especially if you also use “li:first-child”
 and “li:last-child”.
 .Pp
+Each nesting number can contain an
+.Li epub:type ,
+e.g.,
+.Li +epigraph
+or
+.Li 1+introduction_ .
+This type will be added to EPUB3 TOC and, if it ends with an underscore, to the
+v3 Landmarks NAV element, and the EPUB2 Guide element.
+Some four-letter abbreviations are supported:
+.Bd -ragged -offset indent
+.Bl -column
+.It Li ackn Ta Li bibl Ta Li cprt Ta Li eplg Ta Li frwd Ta Li pgls Ta Li prlg
+.It Li afwd Ta Li clpn Ta Li dedi Ta Li errt Ta Li glss Ta Li prmb Ta Li ttpg
+.It Li apdx Ta Li cntr Ta Li epgr Ta Li ftns Ta Li intr Ta Li prfc Ta Li volm
+.El
+.Ed
+.Pp
+.Li text
+is special. In EPUB2, it tells the reader that the actual book text starts there.
+If specified, it is copied to
+.Li bodymatter ,
+the v3 equivalent.
+It still needs a trailing underscore to be included in the Guide/Landmarks.
+.Pp
 EPUB2 and 3 page lists are also supported.
 .Nm
 looks for pagebreak spans like this:
 .Dl <span epub:type="pagebreak" class="pages" id="page11"></span>
 It then strips off this regex from the
-.Pa id
+.Li id
 element:
 .Dl [pPaAgGeE]+[-_]*
 and uses the remainder as the page number. Note: the above span uses non-HTML XML
 namespaces, so be sure to add:
 .Dl xmlns:epub="http://www.idpf.org/2007/ops"
 to the
-.Pa <html>
+.Li <html>
 tag.
 .Pp
 .Xr make 1
@@ -236,10 +258,16 @@ to import the HTML file names into make, you may want to
 the file names to keep the files in reading order.
 .Sh SEE ALSO
 .Xr epubcheck 1 , Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
-.Pp
+.Bl -bullet
+.It
 .Lk https://tools.ietf.org/html/bcp47 IETF BCP 47, “Tags for Identifying Languages”
-.Pp
+.It
 .Lk https://tools.ietf.org/html/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
+.It
+.Lk https://www.w3.org/publishing/epub32/epub-packages.html EPUB Packages 3.2
+.It
+.Lk http://idpf.org/epub/201 EPUB 2.0.1
+.El
 .Sh LICENSE
 “Released under the public domain. Use as you want, specially for evil.”
 This program is publicly available at

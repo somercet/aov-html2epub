@@ -1,26 +1,72 @@
 #! /usr/bin/env -S gawk -f
 
-# we need to create
-# toc.ncx
-# toc.xhtml
-# content.opf HTML manifest
+#e2tocpf(gap, filen, fileID, c, tx) {
+#	return sprintf( \
+#		"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"	\
+#		"%s      <navLabel><text>%s</text></navLabel>\n"\
+#		"%s      <content src=\"%s\" />\n",		\
+#		gap, fileID, c,	\
+#		gap, tx,		\
+#		gap, filen)
+#}
 
 BEGIN {
-	ogap = ""
-	count = 2
-	onest = 0
-	oltrack = 1
-	tocN = "toc2_1toc_TMP"
-	tocX = "toc3_1toc_TMP"
-	e2pl = "toc2_2pagelist_TMP"
-	e3pl = "toc3_2pagelist_TMP"
-	e2dtb = "toc2_dtbMeta_TMP"
+e2tocpf = "%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"  \
+	"%s      <navLabel><text>%s</text></navLabel>\n" \
+	"%s      <content src=\"%s\" />\n"
 
+e3tocpf = "%s        <li><a epub:type=\"%s\" href=\"%s\">%s</a>"
+
+#no toc/loi/lot cover part/notes/index text/bodymatter
+etAbbr["ackn"] = "acknowledgements"
+etAbbr["afwd"] = "afterword"
+etAbbr["apdx"] = "appendix"
+etAbbr["bibl"] = "bibliography"
+etAbbr["clpn"] = "colophon"
+etAbbr["cntr"] = "contributors"
+etAbbr["cprt"] = "copyright-page"
+etAbbr["dedi"] = "dedication"
+etAbbr["epgr"] = "epigraph"
+etAbbr["eplg"] = "epilogue"
+etAbbr["errt"] = "errata"
+etAbbr["ftns"] = "footnotes"
+etAbbr["frwd"] = "foreword"
+etAbbr["glss"] = "glossary"
+etAbbr["intr"] = "introduction"
+etAbbr["pgls"] = "page-list"
+etAbbr["prmb"] = "preamble"
+etAbbr["prfc"] = "preface"
+etAbbr["prlg"] = "prologue"
+etAbbr["ttpg"] = "title-page"
+etAbbr["volm"] = "volume"
+
+ogap	= ""
+count	= 2
+onest	= 0
+oltrack	= 1
+e3toc	= "toc3_toc_TMP"
+e3pl	= "toc3_pagelist_TMP"
+e3ldmrk	= "toc3_lndmrk_TMP"
+
+e2toc	= "toc2_toc_TMP"
+e2pl	= "toc2_pagelist_TMP"
+e2guide = "toc2_guide_TMP"
+e2dtb	= "toc2_dtbMeta_TMP"
+
+e3loi	= "toc3_loi_TMP"
+e3lot	= "toc3_lot_TMP"
+
+dtbdepth = 0
+dtbtPC = 0
+}
+
+
+BEGIN {
 	printf	"  <navMap>\n"	\
 		"    <navPoint id=\"titlepage.xhtml\" playOrder=\"1\">\n"	\
 		"      <navLabel><text>Title page</text></navLabel>\n"	\
 		"      <content src=\"titlepage.xhtml\" />\n"		\
-		> tocN
+		> e2toc
 
 	printf	"  <section class=\"epub3toc\" epub:type=\"toc\">\n"	\
 		"    <header>\n"				\
@@ -29,20 +75,19 @@ BEGIN {
 		"    <nav epub:type=\"toc\" id=\"toc\">\n"	\
 		"      <ol class=\"epub3toca\">\n"		\
 		"        <li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"	\
-		> tocX
+		> e3toc
 	if ( ops ) {
 		sub(/\/+$/,  "", ops)
 		sub(/^/,    "/", ops)
 		sub(/$/, "\\//", ops)
 	}
-	dtbdepth = 0
-	dtbtPC = 0
 }
 
 BEGINFILE {
 	ttout = 0
 	ttresult = 0
 	fn = FILENAME
+	lndmrk = 0
 	if ( ops )
 		sub(ops, "", fn)
 	fnID = fn
@@ -50,77 +95,116 @@ BEGINFILE {
 	sub(/.*\//, "", fnID)
 }
 
-/<!--[	 ]+TTITLE/ {
+# NNAV [1,2,3...]+[epubtype] Chap title
+# NNAV loi #illos01 My butt
+
+/^!--[	\n ]+NNAV[	\n ]+[0-9]*\+/ {
 	if ( ttout == 0 )
 		ttout++
 	else
 		next
 
-	gsub(/	/, " ")
-	gsub(/  +/, " ")
-	sub(/ -->.*/, "")
-	sub(/^.*<!-- +TTITLE /, "0 ")
-	sub(/^.*<!-- +TTITLE/, "")
+	gsub(/[ \n\t]+/, " ")
+	sub(/ --$/, "")
+	sub(/^!-- NNAV \+/, "0+")
+	sub(/^!-- NNAV /, "")
+	sub(/\+/, "	")
 	sub(/ /, "	")
 
+
 	ttresult = split($0, parts, /	/)
-	if ( ttresult < 2 || parts[1] !~ /^[0-9]+$/ )
-		printf "Malformed TTITLE depth \"%s\" in \"%s\".\n", \
-			parts[1], FILENAME > "/dev/stderr"
-	else if ( dtbdepth < parts[1] )
+	if ( dtbdepth < parts[1] )
 		dtbdepth = parts[1]
 
-	if ( parts[2] ~ /</ )
-		gsub(/</, "", parts[2])
+	if ( parts[3] ~ /</ )
+		gsub(/</, "&lt;", parts[3])
 
 	if ( onest >= parts[1] ) {
-		printf "%s    </navPoint>\n", ogap > tocN
+		printf "%s    </navPoint>\n", ogap > e2toc
 
-		printf "</li>\n" > tocX
+		printf "</li>\n" > e3toc
 	}
 
 	for ( ; onest > parts[1] ; onest-- ) {
-		printf "%s  </navPoint>\n", ogap > tocN
+		printf "%s  </navPoint>\n", ogap > e2toc
 
 		printf	"%s        </ol>\n"	\
-			"%s      </li>\n", ogap, ogap > tocX
+			"%s      </li>\n", ogap, ogap > e3toc
 		sub(/  /, "", ogap)
 	}
 
 	ngap = sprintf("%*s",  parts[1] * 2, "")
 
 	for ( ; onest < parts[1] ; onest++ ) {
-		#echo > tocN
+		#echo > e2toc
 
 		printf "\n%s        <ol class=\"epub3toc%c epub3toc%d\">\n", \
-			ngap, 97 + parts[1], oltrack++ > tocX
+			ngap, 97 + parts[1], oltrack++ > e3toc
 	}
 
-	printf	"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"	\
-		"%s      <navLabel><text>%s</text></navLabel>\n" \
-		"%s      <content src=\"%s\" />\n",		\
-		ngap, fnID, count,				\
-		ngap, parts[2],					\
-		ngap, fn > tocN
+	if ( parts[2] ~ /_$/ ) {
+		sub(/_$/, "", parts[2])
+		lndmrk = 1
+	}
 
-	sub(/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +/, "", parts[2])
+	if ( ! parts[2] )
+		parts[2] = "chapter"
 
-	printf "%s        <li><a epub:type=\"chapter\" href=\"%s\">%s</a>", \
-		ngap, fn, parts[2] > tocX
- 
+	if ( parts[2] in etAbbr )
+		epbType = etAbbr[parts[2]]
+	else
+		epbType = parts[2]
+
+	printf e2tocpf, ngap, fnID, count,	\
+			ngap, parts[3],		\
+			ngap, fn		> e2toc
+
+	sub(/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +/, "", parts[3])
+
+	printf e3tocpf, ngap, epbType, fn, parts[3] > e3toc
+
+	if ( lndmrk ) {
+		if ( epbType == "text" )
+			parts[3] = "Start of text"
+
+		printf "    <reference href=\"%s\" type=\"%s\" title=\"%s\" />\n",	\
+			fn, epbType, parts[3] > e2guide
+
+		if ( epbType == "text" )
+			epbType = "bodymatter"
+
+		printf	"      <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
+			fn, epbType, parts[3] > e3ldmrk
+	}
+
 	ogap = ngap
 	onest = parts[1]
 	count++
+	next
 }
 
-#<span epub:type="pagebreak" class="pages" id="page207">207</span>
+
+/^!--[	 ]+NNAV/ {
+	gsub(/[ \n	]+/, " ")
+	sub(/ --$/, "")
+	sub(/^!-- +NNAV /, "")
+	#GUIDE / LANDMARKS
+#	if ( epbType ) {
+#		printf	"    <reference href=\"%s\" type=\"%s\" title=\"%s\" />\n",	\
+#			fn, epbType, epName > e2guide
+#
+#		printf	"      <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
+#			fn, epbType, epName > e3ldmrk
+#	}
+}
+
+
 /epub:type=['"]pagebreak/ {
 	sub(/.* id=['"]/, "")
-	# pageid:
-	sub(/['"].*/, "")
+	sub(/['"].*/, "")	# pageid
 	pagenum = $0
-	# must strip OPS builddir
 	sub(/[pPaAgGeE]+[-_]*/, "", pagenum)
+
 	printf	"    <pageTarget type=\"normal\" id=\"%s\" value=\"%s\">\n"	\
 		"      <navLabel><text>%s</text></navLabel>\n"		\
 		"      <content src=\"%s#%s\"/>\n"			\
@@ -134,43 +218,39 @@ BEGINFILE {
 
 ENDFILE {
 	if ( ttresult < 2 || ttout == 0 ) {
-		printf	"%s    </navPoint>\n"				\
-			"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"	\
-			"%s      <navLabel><text>%s</text></navLabel>\n"\
-			"%s      <content src=\"%s\" />\n",		\
-			ogap,						\
-			ogap, fnID, count,				\
-			ogap, count,					\
-			ogap, fn > tocN
+		printf "%s    </navPoint>\n" e2tocpf, \
+			ogap,			\
+			ogap, fnID, count,	\
+			ogap, count		\
+			ogap, fn		> e2toc
 
-		printf	"</li>\n" \
-			"%s        <li><a epub:type=\"chapter\" href=\"%s\">%s</a>", \
-			ogap, fn, count++ > tocX
+
+		printf "</li>\n" e3tocpf, ogap, fn, count++ > e3toc
 	}
 }
 
 
 END {
-	printf "</li>\n" > tocX
+	printf "</li>\n" > e3toc
 
 	printf "ncxvals=(%d %d %d)\n", dtbdepth + 1, pagenum, dtbtPC > e2dtb
 
 	for ( ; onest > 0 ; onest-- ) {
-		printf	"%s    </navPoint>\n", ogap > tocN
+		printf	"%s    </navPoint>\n", ogap > e2toc
 
 		printf	"%s        </ol>\n"	\
-			"%s      </li>\n", ogap, ogap > tocX
+			"%s      </li>\n", ogap, ogap > e3toc
 		sub(/  /, "", ogap)
 	}
 
 
 	## end Tocs2 and 3
 	printf	"    </navPoint>\n"	\
-		"  </navMap>\n" > tocN
+		"  </navMap>\n" > e2toc
 
 	printf	"      </ol>\n"		\
 		"    </nav>\n"		\
-		"  </section>\n" > tocX
+		"  </section>\n" > e3toc
 }
 
 # XHTML IDs: match  [A-Za-z][A-Za-z0-9:_.-]*
