@@ -1,6 +1,6 @@
-.Dd April 15, 2021
+.Dd May 14, 2021
+.Dt aov-html2epub 1 CON
 .Os Unix
-.Dt aov-html2epub 1 URM
 .Sh NAME
 .Nm aov-html2epub
 .Nd Takes a list of HTML5 files and turns them into an EPUB, version 3, with back-compatibility for v2.
@@ -214,11 +214,11 @@ and “li:last-child”.
 Each nesting number can contain an
 .Li epub:type ,
 e.g.,
-.Li +epigraph
+.Qq Li +epigraph
 or
-.Li 1+introduction_ .
+.Qq Li 1+introduction_ .
 This type will be added to EPUB3 TOC and, if it ends with an underscore, to the
-v3 Landmarks NAV element, and the EPUB2 Guide element.
+Landmarks NAV element and the EPUB2 Guide element.
 Some four-letter abbreviations are supported:
 .Bd -ragged -offset indent
 .Bl -column
@@ -228,10 +228,10 @@ Some four-letter abbreviations are supported:
 .El
 .Ed
 .Pp
-.Li text
+.Qq Li text
 is special. In EPUB2, it tells the reader that the actual book text starts there.
 If specified, it is copied to
-.Li bodymatter ,
+.Qq Li bodymatter ,
 the v3 equivalent.
 It still needs a trailing underscore to be included in the Guide/Landmarks.
 .Pp
@@ -251,22 +251,18 @@ to the
 tag.
 .Pp
 .Xr make 1
-is an excellent tool for building and updating EPUBs with this script, but, if you use
+is an excellent tool for building and updating EPUBs with this script, but if
 .Ic $(wildcard)
-to import the HTML file names into make, you may want to
+is used to import the HTML file names into make, you may need to
 .Ic $(sort)
-the file names to keep the files in reading order.
+the file names to keep them in reading order.
 .Sh SEE ALSO
 .Xr epubcheck 1 , Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
-.Bl -bullet
-.It
-.Lk https://tools.ietf.org/html/bcp47 IETF BCP 47, “Tags for Identifying Languages”
-.It
-.Lk https://tools.ietf.org/html/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
-.It
-.Lk https://www.w3.org/publishing/epub32/epub-packages.html EPUB Packages 3.2
-.It
-.Lk http://idpf.org/epub/201 EPUB 2.0.1
+.Bl -hang
+.It Lk https://tools.ietf.org/html/bcp47 IETF BCP 47, “Tags for Identifying Languages”
+.It Lk https://tools.ietf.org/html/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
+.It Lk https://www.w3.org/publishing/epub32/epub-packages.html EPUB Packages 3.2
+.It Lk http://idpf.org/epub/201 EPUB 2.0.1
 .El
 .Sh LICENSE
 “Released under the public domain. Use as you want, specially for evil.”
