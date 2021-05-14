@@ -143,23 +143,26 @@ BEGINFILE {
 	else
 		epbType = parts[2]
 
-	if ( lndmrk ) {
-		if ( epbType == "text" )
-			parts[3] = "Start of text"
-
-		printf "    <reference href=\"%s\" type=\"%s\" title=\"%s\" />\n",	\
-			fn, epbType, parts[3] > e2guide
-
-		if ( epbType == "text" )
-			epbType = "bodymatter"
-
-		printf	"        <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
-			fn, epbType, parts[3] > e3ldmrk
-	}
-
 	printf e2tocpf, ngap, fnID, count,	\
 			ngap, parts[3],		\
 			ngap, fn		> e2toc
+
+	temp = parts[3]
+	if ( epbType == "text" )
+		temp = "Start of text"
+
+	if ( lndmrk ) {
+		printf "    <reference href=\"%s\" type=\"%s\" title=\"%s\" />\n",	\
+			fn, epbType, temp > e2guide
+	}
+
+	if ( epbType == "text" )
+		epbType = "bodymatter"
+
+	if ( lndmrk ) {
+		printf	"        <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
+			fn, epbType, temp > e3ldmrk
+	}
 
 	sub(/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +/, "", parts[3])
 
