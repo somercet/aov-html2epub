@@ -175,7 +175,7 @@ else
 fi
 
 
-if ! awk -f ${LIB}/ttitle.awk -- RS='>[^<]*<' ops=$OPS "${HTML[@]}" ; then
+if ! awk -f ${LIB}/ttitle.awk -- ops=$OPS "${HTML[@]}" ; then
     echo "ttitle.awk error!" > /dev/stderr
 fi
 
@@ -299,6 +299,11 @@ echo '  </docTitle>'
 echo '  <docAuthor>'
 echo '    <text>'${AUTHORMUNGE}'</text>'
 echo '  </docAuthor>'
+echo '  <navMap>'
+
+cat toc2_toc_TMP
+
+echo '  </navMap>'
 } >&3
 
 {
@@ -313,14 +318,22 @@ done
 echo '  <meta charset="utf-8" />'
 echo '</head>'
 echo '<body>'
+echo '  <section class="epub3toc" epub:type="toc">'
+echo '    <header>'
+echo '      <h2>Contents</h2>'
+echo '    </header>'
+echo '    <nav epub:type="toc" id="toc">'
+echo '      <ol class="epub3toca">'
+
+cat toc3_toc_TMP
+
+echo '      </ol>'
+echo '    </nav>'
+echo '  </section>'
 } >&4
 
 
-cat toc2_toc_TMP >&3
-cat toc3_toc_TMP >&4
-
-
-## BEGIN PAGE PROCESSING
+## EPUB PAGELISTS
 if [[ -s toc3_pagelist_TMP ]]
 then
     {
@@ -331,6 +344,7 @@ then
     echo '    </navLabel>'
 
     cat toc2_pagelist_TMP
+
     echo '  </pageList>'
     } >&3
 
@@ -342,12 +356,12 @@ then
     echo '      <ol>'
 
     cat toc3_pagelist_TMP
+
     echo '      </ol>'
     echo '    </nav>'
     echo '  </section>'
     } >&4
 fi
-# END PAGE PROCESSING
 
 # EPUB3 LANDMARKS
 if [[ -s toc3_lndmrk_TMP ]]
@@ -359,6 +373,7 @@ then
     echo '      <ol>'
 
     cat toc3_lndmrk_TMP
+
     echo '      </ol>'
     echo '    </nav>'
     echo '  </section>'
@@ -366,13 +381,17 @@ fi >&4
 
 echo '</ncx>' >&3
 
-printf '</body>\n</html>\n' >&4
+{
+echo '</body>'
+echo '</html>'
+} >&4
 
 exec 3>&- 4>&-
 
 FILES="${OPS}toc.ncx ${OPS}toc.xhtml $FILES"
 
 rm toc?_*_TMP
+
 # END TOC PROCESSING
 
 

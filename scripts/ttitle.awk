@@ -3,7 +3,10 @@
 
 BEGIN {
 
-e2tocpf = "%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"  \
+RS=">[^<]*<"
+
+e2tocpf = \
+	"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"  \
 	"%s      <navLabel><text>%s</text></navLabel>\n" \
 	"%s      <content src=\"%s\" />\n"
 
@@ -51,19 +54,12 @@ dtbdepth = 0
 dtbtPC = 0
 
 
-	printf	"  <navMap>\n"	\
-		"    <navPoint id=\"titlepage.xhtml\" playOrder=\"1\">\n"	\
+	printf	"    <navPoint id=\"titlepage.xhtml\" playOrder=\"1\">\n"	\
 		"      <navLabel><text>Title page</text></navLabel>\n"	\
 		"      <content src=\"titlepage.xhtml\" />\n"		\
 		> e2toc
 
-	printf	"  <section class=\"epub3toc\" epub:type=\"toc\">\n"	\
-		"    <header>\n"				\
-		"      <h2>Contents</h2>\n"			\
-		"    </header>\n"				\
-		"    <nav epub:type=\"toc\" id=\"toc\">\n"	\
-		"      <ol class=\"epub3toca\">\n"		\
-		"        <li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"	\
+	printf	"        <li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"	\
 		> e3toc
 	if ( ops ) {
 		sub(/\/+$/,  "", ops)
@@ -105,8 +101,9 @@ BEGINFILE {
 	if ( dtbdepth < parts[1] )
 		dtbdepth = parts[1]
 
-	if ( parts[3] ~ /[<"]/ ) {
+	if ( parts[3] ~ /[><"]/ ) {
 		gsub(/</, "&lt;", parts[3])
+		gsub(/>/, "&gt;", parts[3])
 		gsub(/"/, "&quot;", parts[3])
 	}
 
@@ -221,10 +218,9 @@ ENDFILE {
 
 
 END {
-	printf "</li>\n" > e3toc
-
 	printf "ncxvals=(%d %d %d)\n", dtbdepth + 1, pagenum, dtbtPC > e2dtb
 
+	printf "</li>\n" > e3toc
 	for ( ; onest > 0 ; onest-- ) {
 		printf	"%s    </navPoint>\n", ogap > e2toc
 
@@ -232,15 +228,7 @@ END {
 			"%s      </li>\n", ogap, ogap > e3toc
 		sub(/  /, "", ogap)
 	}
-
-
-	## end Tocs2 and 3
-	printf	"    </navPoint>\n"	\
-		"  </navMap>\n" > e2toc
-
-	printf	"      </ol>\n"		\
-		"    </nav>\n"		\
-		"  </section>\n" > e3toc
+	printf "    </navPoint>\n" > e2toc
 }
 
 # XHTML IDs: match  [A-Za-z][A-Za-z0-9:_.-]*
