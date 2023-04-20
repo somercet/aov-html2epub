@@ -1,9 +1,10 @@
 .Dd May 14, 2021
-.Dt aov-html2epub 1 CON
-.Os Unix
+.Dt AOV-HTML2EPUB 1 CON
+.Os
 .Sh NAME
 .Nm aov-html2epub
-.Nd Takes a list of HTML5 files and turns them into an EPUB, version 3, with back-compatibility for v2.
+.Nd Takes a list of HTML5 files and turns them into an EPUB, version 3, with
+back-compatibility for v2
 .Sh SYNOPSIS
 .Nm
 .Ar EPUB_FILE
@@ -57,20 +58,24 @@ Subject, author, and title may be specified more than once.
 .Pp
 .Nm
 generates these files, which are all deleted after the EPUB is built:
-.Bd -ragged -offset indent
-.Bl -column
+.Bd -ragged -offset indent -compact
+.Bl -column xxxxxxxx xxxxxxxxxxxxxxxxxxxxxx
 .It Pa mimetype Ta Pa META-INF/container.xml
 .It Pa toc.ncx Ta Pa content.opf
 .It Pa toc.xhtml Ta Pa titlepage.xhtml
 .El
 .Ed
 .Pp
-A customized yet basic title page will be generated unless you provide one in the build directory.
-If a cover image is provided, it will be the only element visible on the title page.
+A customized yet basic title page will be generated unless you provide one in
+the build directory.
+If a cover image is provided, it will be the only element visible on the title
+page.
 If the file
 .Pa description
 exists (which should contain one or more lines of UTF-8 text, and no HTML),
-it will be added to the OPF file’s “dc:description” section.
+it will be added to the OPF file’s
+.Dq dc:description
+section.
 .Pp
 .Xr file 1
 is used to identify the MIME types of non-HTML files.
@@ -81,24 +86,27 @@ If
 is not specified,
 .Xr uuidgen 1
 will be used to generate a random UUID, if present.
-For consistency, randomly generate a single UUID for each book and specify it each time you build.
+For consistency, randomly generate a single UUID for each book and specify it
+each time you build.
 .Pp
-The EPUB standard allows the OPF file (and every other file) to be in the base directory of the ZIP file,
-along with
+The EPUB standard allows the OPF file (and every other file) to be in the base
+directory of the ZIP file, along with
 .Pa mimetype
 and
 .Pa META-INF/ .
-But it is cleaner and more correct to place these files in a subdirectory, canonically
+But it is cleaner and more correct to place these files in a subdirectory,
+canonically
 .Pa OPS
 or
 .Pa OEBPS ,
 with
 .Fl b Ar OPS ,
-which builds the generated files in that subdir, and sets the correct relative filepaths in the OPF and TOC files.
+which builds the generated files in that subdir, and sets the correct relative
+filepaths in the OPF and TOC files.
 .Pp
 No ungenerated files should be moved, modified, or deleted by this program.
 .Sh OPTIONS
-.Bl -tag
+.Bl -tag -width Ds
 .It Fl t Ar title
 Book title, one (or more) is
 .Em required .
@@ -166,8 +174,10 @@ By default,
 .Nm
 will create flat TOCs with one entry for each HTML file, numbered ordinally.
 (Multiple TOC entries per file is not yet supported.)
-To create TOCs with meaningful names and nesting, each file needs an HTML comment containing the
-NNAV keyword, a nesting number and “+” sign, and a phrase.
+To create TOCs with meaningful names and nesting, each file needs an HTML
+comment containing the NNAV keyword, a nesting number and
+.Dq +
+sign, and a phrase.
 So the NNAV lines in the first 9 HTML files may read:
 .Bd -literal
 <!-- NNAV  +  Preface -->
@@ -181,7 +191,8 @@ So the NNAV lines in the first 9 HTML files may read:
 <!-- NNAV 1+    II. Book II splash page -->
 .Ed
 .Pp
-(The extra spaces between the nesting numbers and the phrases are there only as a visual cue.)
+(The extra spaces between the nesting numbers and the phrases are there only
+as a visual cue.)
 “NNAV +” is the same as “NNAV 0+”.
 Nesting numbers may increase by one at a time, but can decrease arbitrarily.
 Note the “outline” numbering: the
@@ -189,9 +200,10 @@ Note the “outline” numbering: the
 file has no numbering, so it needs these, but they are stripped from the
 .Pa toc.xhtml
 file.
-Instead, the base ordered list (OL) is given the CSS class name “epub3toca”,
-and each subsequent OL is given two class names:
-one numbered for every new OL, and one lettered according to its depth.
+Instead, the base ordered list (OL) is given the CSS class name
+.Dq epub3toca ,
+and each subsequent OL is given two class names: one numbered for every new
+OL, and one lettered according to its depth.
 So the CSS classes for the above NNAV entries would be:
 .Bd -literal
 epub3toca            Preface
@@ -208,8 +220,8 @@ epub3tocb epub3toc4	II. Book II splash page
 The CSS files given on the command line are included in the
 .Pa toc.xhtml
 header, so this allows
-fairly easy, fine-grained control over each OL, especially if you also use “li:first-child”
-and “li:last-child”.
+fairly easy, fine-grained control over each OL, especially if you also use
+“li:first-child” and “li:last-child”.
 .Pp
 Each nesting number can contain an
 .Li epub:type ,
@@ -220,16 +232,18 @@ or
 This type will be added to EPUB3 TOC and, if it ends with an underscore, to the
 Landmarks NAV element and the EPUB2 Guide element.
 Some four-letter abbreviations are supported:
-.Bd -ragged -offset indent
-.Bl -column
-.It Li ackn Ta Li bibl Ta Li cprt Ta Li eplg Ta Li frwd Ta Li prmb Ta Li ttpg
-.It Li afwd Ta Li clpn Ta Li dedi Ta Li errt Ta Li glss Ta Li prfc Ta Li volm
-.It Li apdx Ta Li cntr Ta Li epgr Ta Li ftns Ta Li intr Ta Li prlg
+.Bd -ragged -offset indent -compact
+.Bl -column xxxx xxxx xxxx xxxx xxxx
+.It Li ackn Ta Li clpn Ta Li epgr Ta Li frwd Ta Li prfc
+.It Li afwd Ta Li cntr Ta Li eplg Ta Li glss Ta Li prlg
+.It Li apdx Ta Li cprt Ta Li errt Ta Li intr Ta Li ttpg
+.It Li bibl Ta Li dedi Ta Li ftns Ta Li prmb Ta Li volm
 .El
 .Ed
 .Pp
 .Qq Li text
-is special. In EPUB2, it tells the reader that the actual book text starts there.
+is special.
+In EPUB2, it tells the reader that the actual book text starts there.
 If specified, it is copied to
 .Qq Li bodymatter ,
 the v3 equivalent.
@@ -243,8 +257,8 @@ It then strips off this regex from the
 .Li id
 element:
 .Dl [pPaAgGeE]+[-_]*
-and uses the remainder as the page number. Note: the above span uses non-HTML XML
-namespaces, so be sure to add:
+and uses the remainder as the page number.
+Note: the above span uses non-HTML XML namespaces, so be sure to add:
 .Dl xmlns:epub="http://www.idpf.org/2007/ops"
 to the
 .Li <html>
@@ -257,15 +271,15 @@ is used to import the HTML file names into make, you may need to
 .Ic $(sort)
 the file names to keep them in reading order.
 .Sh SEE ALSO
-.Xr epubcheck 1 , Xr zip 1 , Xr uuidgen 1 , Xr file 1 .
-.Bl -hang
+.Xr epubcheck 1 , Xr file 1 , Xr uuidgen 1 , Xr zip 1 .
+.Bl -hang -compact
 .It Lk https://tools.ietf.org/html/bcp47 IETF BCP 47, “Tags for Identifying Languages”
 .It Lk https://tools.ietf.org/html/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
 .It Lk https://www.w3.org/publishing/epub32/epub-packages.html EPUB Packages 3.2
 .It Lk http://idpf.org/epub/201 EPUB 2.0.1
 .El
 .Sh LICENSE
-“Released under the public domain. Use as you want, specially for evil.”
+.Dq Released under the public domain. Use as you want, specially for evil.
 This program is publicly available at
 .Lk https://github.com/somercet/aov-html2epub Github
 .Sh AUTHORS

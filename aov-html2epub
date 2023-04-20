@@ -188,7 +188,7 @@ echo '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
 # REQUIRED
 echo '    <dc:language>'${ELANG}'</dc:language>'
 echo '    <dc:identifier id="pub-id">urn:uuid:'${UUID}'</dc:identifier>'
-echo '      <meta property="dcterms:modified">'$( date -Iseconds -u | sed 's/+00:00/Z/' )'</meta>'
+date -u +'      <meta property="dcterms:modified">%FT%TZ</meta>'
 echo '    <dc:rights>'${LICENSE}'</dc:rights>'
 for f in "${TITLE[@]}" ; do
     echo '    <dc:title>'${f}'</dc:title>'
