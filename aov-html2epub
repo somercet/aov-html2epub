@@ -9,19 +9,19 @@
 
 LIB="$HOME/bin/epub3"
 
-declare -a AUTHOR CSS HTML IMAGE SUBJECT TITLE TTF
+declare -a AUTHOR SUBJECT TITLE CSS HTML IMAGE TTF
 
 EPUB=""
+OPS=""
 COVER=""
 ELANG="en-US"
-MAKER=""
-TRANSLATOR=""
-PUBLISHER=""
 LICENSE="Creative Commons BY-SA 4.0 License"
+MAKER=""
+PUBLISHER=""
+TRANSLATOR=""
 UUID=""
-OPS=""
-DEBUG=false
 
+DEBUG=false
 FILES=""
 XTRA=""
 
@@ -72,9 +72,9 @@ do
 		echo "$0: $EPUB already specified! $1" 1>&2
 		exit 1
 	fi					;;
-    *.xhtml | *.html)
+    *.xhtml | *.html | *.htm)
 		HTML+=("$1")			;;
-    *.jpg | *.png | *.gif)
+    *.jpg | *.jpeg | *.png | *.svg | *.gif)
 		IMAGE+=("$1")			;;
     *.ttf | *.woff)
 		TTF+=("$1")			;;
@@ -224,7 +224,7 @@ if [[ -r description ]] ; then
     sed -e '1 s;^;    <dc:description>;' -e '$ s;$;</dc:description>\n;' description
 fi
 
-echo '    <meta content="aov-html2epub" name="dtb:generator" />'
+echo '    <meta name="dtb:generator" content="aov-html2epub" />'
 
 echo '  </metadata>'
 echo '  <manifest>'
@@ -353,7 +353,7 @@ then
     echo '  <section class="epub3pagelist">'
     echo '    <nav epub:type="page-list" hidden="">'
     echo '      <h2>Page list</h2>'
-    echo '      <ol>'
+    echo '      <ol class="epub3pagelist_ol">'
 
     cat toc3_pagelist_TMP
 

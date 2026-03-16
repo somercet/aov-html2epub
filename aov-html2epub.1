@@ -1,9 +1,9 @@
 .Dd May 14, 2021
-.Dt AOV-HTML2EPUB 1 CON
+.Dt AOV-HTML2EPUB 1
 .Os
 .Sh NAME
 .Nm aov-html2epub
-.Nd Takes a list of HTML5 files and turns them into an EPUB, version 3, with
+.Nd Takes a list of XHTML5 files and turns them into an EPUB, version 3, with
 back-compatibility for v2
 .Sh SYNOPSIS
 .Nm
@@ -31,19 +31,20 @@ and other files into an EPUB with a correct
 file (stored, not deflated).
 The only
 .Em requirements
-to build an EPUB are: the EPUB name, a title, and one or more HTML5 files.
+to build an EPUB are: the EPUB name, a title, and one or more XHTML5 files.
 The order of command line arguments is generally unimportant
 .Em except
-to HTML files and, if given more than once, the
+to XHTML files and, if given more than once, the
 .Fl a Ar author
 and
 .Fl t Ar title
 arguments, see below.
 .Pp
-Tables of contents (TOCs) for EPUB2 and 3 are generated for the HTML files.
+Tables of contents (TOCs) for EPUB2 and 3 are generated for the XHTML files.
 Nested TOCs are supported.
-All HTML files will be added to the EPUB reading order
-.Em exactly as given on the command line .
+All XHTML files will be added to the EPUB reading order
+.Em exactly
+as given on the command line.
 Font
 .Po
 .Pa *.ttf
@@ -73,12 +74,11 @@ page.
 If the file
 .Pa description
 exists (which should contain one or more lines of UTF-8 text, and no HTML),
-it will be added to the OPF file’s
-.Dq dc:description
+it will be added to the OPF file’s “dc:description”
 section.
 .Pp
 .Xr file 1
-is used to identify the MIME types of non-HTML files.
+is used to identify the MIME types of non-XHTML files.
 .Xr zip 1
 is used to generate the EPUB.
 If
@@ -111,19 +111,22 @@ No ungenerated files should be moved, modified, or deleted by this program.
 Book title, one (or more) is
 .Em required .
 Command line order will be preserved in the OPF.
-.It Fl a Ar name Ns Op Ar |fileby-name
+.It Fl a Ar name Ns Op Ar |file-by-name
 Author name and (optional) file-by name, separated with a pipe
-character ("First Last|Last, First"), with one
+character
+.Pq Dq First Last|Last, First ,
+with one
 .Fl a
 per author.
 As with titles, command line order is preserved in the OPF, and the first
 author listed will be considered the primary author by many EPUB readers.
 .It Fl d Ar date
-Publishing date (ISO 8601), e.g. July 1999 is "1999-07".
+Publishing date (ISO 8601), e.g. July 1999 is
+.Dq 1999-07
 .It Fl s Ar subject
 Subject(s), zero or more, one
 .Fl s
-per subject.
+per subject
 .It Fl m Ar maker
 EPUB creator
 .It Fl p Ar publisher
@@ -133,9 +136,11 @@ Translator
 .It Fl c Ar cover.img
 Cover image
 .It Fl l Ar lang
-Language (BCP 47), default "en-US"
+Language (BCP 47), default
+.Dq en-US
 .It Fl r Ar rights
-Content copyright or license, default "CC BY-SA 4.0"
+Content copyright or license, default
+.Dq CC BY-SA 4.0
 .It Fl u Ar uuid
 Universal Unique ID
 .It Fl b Ar subdir
@@ -172,13 +177,12 @@ OEBPS/default.css
 .Pp
 By default,
 .Nm
-will create flat TOCs with one entry for each HTML file, numbered ordinally.
+will create flat TOCs with one entry for each XHTML file, numbered ordinally.
 (Multiple TOC entries per file is not yet supported.)
-To create TOCs with meaningful names and nesting, each file needs an HTML
-comment containing the NNAV keyword, a nesting number and
-.Dq +
+To create TOCs with meaningful names and nesting, each file needs an XHTML
+comment containing the NNAV keyword, a nesting number and “+”
 sign, and a phrase.
-So the NNAV lines in the first 9 HTML files may read:
+So the NNAV lines in the first 9 XHTML files may read:
 .Bd -literal
 <!-- NNAV  +  Preface -->
 <!-- NNAV  +  Epigraph -->
@@ -186,7 +190,7 @@ So the NNAV lines in the first 9 HTML files may read:
 <!-- NNAV 2+      1. The First Bit -->
 <!-- NNAV 3+        a. More Of The First -->
 <!-- NNAV 3+        b. Even More First -->
-<!-- NNAV 2+      1. The Second Bit -->
+<!-- NNAV 2+      2. The Second Bit -->
 <!-- NNAV  +  Interlude -->
 <!-- NNAV 1+    II. Book II splash page -->
 .Ed
@@ -201,20 +205,19 @@ file has no numbering, so it needs these, but they are stripped from the
 .Pa toc.xhtml
 file.
 Instead, the base ordered list (OL) is given the CSS class name
-.Dq epub3toca ,
-and each subsequent OL is given two class names: one numbered for every new
-OL, and one lettered according to its depth.
+“epub3toca”, and each subsequent OL is given two class names: one numbered
+for every new OL, and one lettered according to its depth.
 So the CSS classes for the above NNAV entries would be:
 .Bd -literal
 epub3toca            Preface
 epub3toca            Epigraph
-epub3tocb epub3toc1	I. Book I splash page
-epub3tocc epub3toc2	  1. The First Bit
-epub3tocd epub3toc3	    a. More Of The First
-epub3tocd epub3toc3	    b. Even More First
-epub3tocc epub3toc2	  2. The Second Bit
+epub3tocb epub3toc1     I. Book I splash page
+epub3tocc epub3toc2       1. The First Bit
+epub3tocd epub3toc3         a. More Of The First
+epub3tocd epub3toc3         b. Even More First
+epub3tocc epub3toc2       2. The Second Bit
 epub3toca            Interlude
-epub3tocb epub3toc4	II. Book II splash page
+epub3tocb epub3toc4     II. Book II splash page
 .Ed
 .Pp
 The CSS files given on the command line are included in the
@@ -226,26 +229,26 @@ fairly easy, fine-grained control over each OL, especially if you also use
 Each nesting number can contain an
 .Li epub:type ,
 e.g.,
-.Qq Li +epigraph
+.Dq Li +epigraph
 or
-.Qq Li 1+introduction_ .
-This type will be added to EPUB3 TOC and, if it ends with an underscore, to the
-Landmarks NAV element and the EPUB2 Guide element.
+.Dq Li 1+introduction_ .
+This type will be added to EPUB3 TOC and, if it ends with an underscore,
+to the Landmarks NAV element and the EPUB2 Guide element.
 Some four-letter abbreviations are supported:
 .Bd -ragged -offset indent -compact
 .Bl -column xxxx xxxx xxxx xxxx xxxx
-.It Li ackn Ta Li clpn Ta Li epgr Ta Li frwd Ta Li prfc
-.It Li afwd Ta Li cntr Ta Li eplg Ta Li glss Ta Li prlg
-.It Li apdx Ta Li cprt Ta Li errt Ta Li intr Ta Li ttpg
-.It Li bibl Ta Li dedi Ta Li ftns Ta Li prmb Ta Li volm
+.It ackn	clpn	epgr	frwd	prfc
+.It afwd	cntr	eplg	glss	prlg
+.It apdx	cprt	errt	intr	ttpg
+.It bibl	dedi	ftns	prmb	volm
 .El
 .Ed
 .Pp
-.Qq Li text
+.Dq Li text
 is special.
 In EPUB2, it tells the reader that the actual book text starts there.
 If specified, it is copied to
-.Qq Li bodymatter ,
+.Dq Li bodymatter ,
 the v3 equivalent.
 It still needs a trailing underscore to be included in the Guide/Landmarks.
 .Pp
@@ -267,21 +270,21 @@ tag.
 .Xr make 1
 is an excellent tool for building and updating EPUBs with this script, but if
 .Ic $(wildcard)
-is used to import the HTML file names into make, you may need to
+is used to import the XHTML file names into make, you may need to
 .Ic $(sort)
 the file names to keep them in reading order.
 .Sh SEE ALSO
 .Xr epubcheck 1 , Xr file 1 , Xr uuidgen 1 , Xr zip 1 .
 .Bl -hang -compact
-.It Lk https://tools.ietf.org/html/bcp47 IETF BCP 47, “Tags for Identifying Languages”
-.It Lk https://tools.ietf.org/html/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
+.It Lk https://www.rfc-editor.org/info/bcp47 IETF BCP 47 “Tags for Identifying Languages”
+.It Lk https://www.rfc-editor.org/info/rfc3339 IETF RFC 3339, “Date and Time on the Internet,” based on ISO 8601
 .It Lk https://www.w3.org/publishing/epub32/epub-packages.html EPUB Packages 3.2
 .It Lk http://idpf.org/epub/201 EPUB 2.0.1
 .El
 .Sh LICENSE
 .Dq Released under the public domain. Use as you want, specially for evil.
 This program is publicly available at
-.Lk https://github.com/somercet/aov-html2epub Github
+.Lk https://github.com/somercet/aov-html2epub Github .
 .Sh AUTHORS
-.An somercet
+.An somercet Aq Mt somercet@gmail.com
 .An Angel Ortega Aq Mt angel@triptico.com

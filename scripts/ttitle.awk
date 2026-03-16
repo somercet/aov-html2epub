@@ -164,7 +164,7 @@ BEGINFILE {
 			fn, epbType, temp > e3ldmrk
 	}
 
-	sub(/([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z])\. +/, "", parts[3])
+	sub(/^([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z]+)\. +/, "", parts[3])
 
 	printf e3tocpf, ngap, epbType, fn, parts[3] > e3toc
 
@@ -234,7 +234,7 @@ END {
 	printf "    </navPoint>\n" > e2toc
 }
 
-# XHTML IDs: match  [A-Za-z][A-Za-z0-9:_.-]*
+# HTML 4.01 and XHTML IDs: [A-Za-z][A-Za-z0-9-_:\.]*
 # https://www.w3.org/TR/xhtml1/#C_8
 # HTML5 IDs: unique in the document; no spaces; at least one char
 
