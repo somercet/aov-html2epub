@@ -1,10 +1,5 @@
 
-# page    bar/master.html page3
-#
-#    <pageTarget type="normal" id="pageix" value="ix">
-#      <navLabel><text>ix</text></navLabel>
-#      <content src="Text/part00e_introduction.xhtml#pageix"/>
-#    </pageTarget>
+#page	b/master.html	page3	3
 
 /^page/ {
 	printf  "    <pageTarget type=\"normal\" id=\"%s\" value=\"%s\">\n"	\
