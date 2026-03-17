@@ -37,9 +37,9 @@ BEGIN {
 		anchor = ""
 
 	if ( $3 > prev )
-		for ( i = prev; i < $3; i++ )
+		for ( i = prev; i < $3; )
 			printf "\n%s<ol class=\"epub3toc%c epub3toc%d\">\n", \
-				indent(i + 1), 97 + $3, oltrack++
+				indent(i + 1), 97 + ++i, oltrack++
 	else {
 		print "</li>"
 		if ( $3 < prev )
