@@ -1,10 +1,28 @@
 #nnav	master.html	1	type	sec3	Title
 
+function push(val) {
+	stack[++sp] = val
+}
+
+function pop(val) {
+	if (sp == 0)
+		return ""   # or handle underflow however you like
+	val = stack[sp]
+	delete stack[sp--]
+	return val
+}
+
+function peek() {
+	return (sp > 0 ? stack[sp] : "")
+}
+
 BEGIN {
 	FS = "	"
 	prev = 0
 	nid = 1
 	body =	"<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
+
+	sp = 0   # stack pointer
 
 	tail =	"</navPoint>"
 
@@ -43,4 +61,5 @@ END {
 	for ( i = prev; i >= 0; i-- )
 		print indent(i) tail
 }
+
 

@@ -1,4 +1,6 @@
 
+# https://www.w3.org/TR/epub-ssv-11/
+
 function vocab(e) {
 	e["ackn"] = "acknowledgements"
 	e["afwd"] = "afterword"
@@ -14,6 +16,7 @@ function vocab(e) {
 	e["ftns"] = "footnotes"
 	e["frwd"] = "foreword"
 	e["glss"] = "glossary"
+	e["impr"] = "imprimatur"
 	e["intr"] = "introduction"
 	e["prmb"] = "preamble"
 	e["prfc"] = "preface"
