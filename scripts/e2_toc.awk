@@ -4,9 +4,9 @@ function push(val) {
 	stack[++sp] = val
 }
 
-function pop(val) {
+function pop() {
 	if (sp == 0)
-		return ""   # or handle underflow however you like
+		return ""
 	val = stack[sp]
 	delete stack[sp--]
 	return val
@@ -16,41 +16,50 @@ function peek() {
 	return (sp > 0 ? stack[sp] : "")
 }
 
+function indent(n) {
+	if (! ind[n] ) {
+		ind[n] = ind[0]
+		for ( i = 0; i < n; i++ )
+			ind[n] = ind[n] "  "
+	}
+	return ind[n]
+}
+
 BEGIN {
 	FS = "	"
 	prev = 0
 	nid = 1
+	sp = 0	# stack pointer
+
+	ind[0] = "      "
 	body =	"<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
-
-	sp = 0   # stack pointer
-
 	tail =	"</navPoint>"
+
+	vocab_all(etAbbr)
 
 	printf body, "navp" nid, nid, "Title page", "titlepage.xhtml"
 	nid++
 }
 
-function indent(n, i) {
-	s=""
-	for ( i = 0; i < n; i++ ) s = s"  "
-	return s
-}
-
 #printf "%s  </navPoint>\n", ogap
 
 /^[in]nav/ {
-	if ( $3 < prev )
-		for ( i = prev; i >= $3; i-- )
-			print indent(i) tail
-	else if ( $3 == prev )
-		print indent(i) tail
-	else
-		print ""
-
 	if ( $5 )
 		s = "#" $5
 	else
 		s = ""
+
+# increasing? push, skip
+# decreasing? pop, skip.
+
+	if ( $3 == prev )
+		print tail
+	else if ( $3 > prev )
+		print "" # i need the loop that correctly extracts the missing depth #
+	else
+		for ( i = prev; i >= $3; i-- )
+			print indent(i) tail
+
 	printf indent($3) body, "navp" nid, nid, $6, $2 s
 	nid++
 

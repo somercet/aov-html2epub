@@ -19,7 +19,7 @@ function closer(n) {
 BEGIN {
 	FS = "	"
 
-	vocab(etAbbr)
+	vocab_all(etAbbr)
 	etAbbr["text"] = "bodymatter"
 
 	ind[0] = "      "
