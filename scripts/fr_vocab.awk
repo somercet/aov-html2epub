@@ -1,5 +1,5 @@
 
-# https://www.w3.org/TR/epub-ssv-11/
+# https://www.w3.org/TR/epub-ssv-11/#sec-partitions
 
 function vocab_landm(e) {
 	e["apdx"] = "appendix"
@@ -9,6 +9,22 @@ function vocab_landm(e) {
 	e["ftns"] = "footnotes"
 	e["glss"] = "glossary"
 	e["text"] = "text"
+	e["lloi"] = "loi"
+	e["llot"] = "lot"
+	e["ttoc"] = "toc"
+}
+
+function vocab_long(e) {
+	e["apdx"] = "Appendix"
+	e["bibl"] = "Bibliography"
+	e["endn"] = "Endnotes"
+	e["errt"] = "Errata"
+	e["ftns"] = "Footnotes"
+	e["glss"] = "Glossary"
+	e["text"] = "Start of Text"
+	e["lloi"] = "List of Illustrations"
+	e["llot"] = "List of Tables"
+	e["ttoc"] = "Table of Contents"
 }
 
 function vocab_all(e) {

@@ -48,8 +48,6 @@ BEGINFILE {
 	split($0, parts, /	/)
 	if ( parts[1] ~ /[^[:digit:]]/ )
 		print "Warning: '" FILENAME "':" NR " depth not an ASCII digit: '" $0 "'" > "/dev/stderr"
-	if ( parts[1] > prev + 1 )
-		print "Warning: '" FILENAME "':" NR " depth raises by more than one: '" $0 "'" > "/dev/stderr"
 	prev = parts[1]
 
 	if ( dtbdep < parts[1] )
