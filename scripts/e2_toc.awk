@@ -1,12 +1,14 @@
 #nnav	master.html	1	type	sec3	Title
 
+@include "fr_vocab.awk"
+
 function push(val) {
 	stack[++sp] = val
 }
 
 function pop() {
 	if (sp == 0)
-		return ""
+		return 0
 	val = stack[sp]
 	delete stack[sp--]
 	return val
@@ -43,32 +45,40 @@ BEGIN {
 
 #printf "%s  </navPoint>\n", ogap
 
-/^[in]nav/ {
+/^nnav/ {
 	if ( $5 )
 		s = "#" $5
 	else
 		s = ""
 
-# increasing? push, skip
-# decreasing? pop, skip.
+	c = 0
 
-	if ( $3 == prev )
-		print tail
-	else if ( $3 > prev )
-		print "" # i need the loop that correctly extracts the missing depth #
+	if ( $3 > prev ) {
+		for ( i = prev; $3 > i + 1; i++ )
+			push(i + 1);
+		print ""
+	} else if ( $3 < prev )
+		for ( i = prev; $3 <= i; i-- )
+			if ( peek() == i )
+				pop()
+			else
+				print ( c++ ? indent(i) tail : tail )
 	else
-		for ( i = prev; i >= $3; i-- )
-			print indent(i) tail
+		print tail
 
-	printf indent($3) body, "navp" nid, nid, $6, $2 s
+	printf indent(i) body, "navp" nid, nid, $6, $2 s
 	nid++
 
 	prev = $3
 }
 
 END {
-	for ( i = prev; i >= 0; i-- )
-		print indent(i) tail
+	c = 0
+	for ( i = prev - 1; i >= 0; i-- )
+		if ( peek() == i )
+			pop()
+		else
+			print ( c++ ? indent(i) tail : tail )
 }
 
 
