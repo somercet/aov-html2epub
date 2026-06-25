@@ -1,6 +1,5 @@
 #nnav	master.html	1	type	sec3	Title
 
-@include "fr_vocab.awk"
 @include "fr_stack.awk"
 
 function indent(n) {
@@ -15,16 +14,12 @@ function indent(n) {
 BEGIN {
 	FS = "	"
 	prev = 0
-	pi = 0
 	nid = 1
 	sp = 0	# stack pointer
 
 	ind[0] = "      "
-	#body =	"<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
-	body =	"<navPoint =\"%s\" =\"%s\">%s</text></src=\"%s\" />"
-	tail =	"</navPoint>"
-
-	vocab_all(etAbbr)
+	body = "<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
+	tail = "</navPoint>"
 
 	printf indent(0) body, "navp" nid, nid, "Title page", "titlepage.xhtml"
 	nid++
@@ -48,16 +43,13 @@ BEGIN {
 			if ( peek() == i )
 				pop()
 			else
-				print(c++ ? indent(i - 1) tail : tail)
-	else {
+				print(c++ ? indent(i) tail : tail)
+	else
 		print tail
-		i = pi
-	}
 
-	printf indent(i) body, "navp" nid, nid, $6, $2 s
+	printf indent($3) body, "navp" nid, nid, $6, $2 s
 	nid++
 
-	pi = i
 	prev = $3
 }
 
