@@ -12,8 +12,7 @@ function indent(n) {
 }
 
 function closer(n) {
-	print indent(n) "</ol>\n" \
-	      indent(n) "</li>"
+	printf "</li>\n%s</ol>", indent(n) 
 }
 
 BEGIN {
@@ -26,8 +25,8 @@ BEGIN {
 	prev = 0
 	oltrack = 1
 
-	print  ind[0] "<ol class=\"epub3toca\">"
-	printf ind[0] "  <li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"
+	print  "    " "<ol class=\"epub3toca\">"
+	printf ind[0] "<li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"
 }
 
 /^[in]nav/ {
@@ -36,28 +35,29 @@ BEGIN {
 	else
 		anchor = ""
 
-	if ( $3 > prev )
-		for ( i = prev; i < $3; )
-			printf "\n%s<ol class=\"epub3toc%c epub3toc%d\">\n", \
-				indent(i + 1), 97 + ++i, oltrack++
+	if ( $3 == prev )
+		printf "</li>\n%s<li>", indent($3)
+	else if ( $3 > prev )
+		for ( i = prev; $3 > i; i++ )
+			printf "\n%s<ol class=\"epub3toc%c epub3toc%d\">\n%s  <li>", \
+				indent(i), 98 + i, oltrack++, indent(i)
 	else {
-		print "</li>"
-		if ( $3 < prev )
-			for ( i = prev; i > $3; i-- )
-				closer(i)
+		for ( i = prev; $3 < i; )
+			closer(--i)
+		printf "</li>\n" indent($3) "<li>"
 	}
 
 	sub(/^([[:digit:]]+|[[:alpha:]][[:digit:]]*|[ivxlcdm]+|[IVXLCDM]+)\. +/, "", $6)
 
-	printf "%s<li><a epub:type=\"%s\" href=\"%s\">%s</a>", \
-		indent($3 + 1), etAbbr[$4], $2 anchor, $6
+	#printf "%s<li><a epub:type=\"%s\" href=\"%s\">%s</a>", \
+	printf "<a epub:type=\"%s\" href=\"%s\">%s</a>", \
+		etAbbr[$4], $2 anchor, $6
 	prev = $3
 }
 
 END {
-	print "</li>"
-	for ( i = prev; i > 0; i-- )
-		closer(i)
-	print ind[0] "</ol>"
+	for ( i = prev; i > 0; )
+		closer(--i)
+	print "</li>\n    </ol>"
 }
 
