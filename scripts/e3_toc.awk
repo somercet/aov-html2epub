@@ -49,7 +49,6 @@ BEGIN {
 
 	sub(/^([[:digit:]]+|[[:alpha:]][[:digit:]]*|[ivxlcdm]+|[IVXLCDM]+)\. +/, "", $6)
 
-	#printf "%s<li><a epub:type=\"%s\" href=\"%s\">%s</a>", \
 	printf "<a epub:type=\"%s\" href=\"%s\">%s</a>", \
 		etAbbr[$4], $2 anchor, $6
 	prev = $3
