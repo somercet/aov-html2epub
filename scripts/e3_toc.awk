@@ -12,7 +12,7 @@ function indent(n) {
 }
 
 function closer(n) {
-	printf "</li>\n%s</ol>", indent(n) 
+	printf "</li>\n%s</ol>", indent(n)
 }
 
 BEGIN {

@@ -21,7 +21,7 @@ BEGIN {
 	printf format, etAbbr[$4], $2 anchor, etLong[$4]
 }
 
-END { 
+END {
 	print "</guide>"
 }
 
