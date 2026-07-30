@@ -1,0 +1,431 @@
+#!/bin/bash
+
+# Converts an HTML file to EPUB 3.0 format
+#
+# Peter Buxton <somercet@gmail.com>
+# Angel Ortega <angel@triptico.com>
+#
+# Public domain
+
+LIB="$HOME/bin/epub3"
+
+declare -a AUTHOR SUBJECT TITLE CSS HTML IMAGE TTF
+
+EPUB=""
+OPS=""
+COVER=""
+ELANG="en-US"
+LICENSE="Creative Commons BY-SA 4.0 License"
+MAKER=""
+PUBLISHER=""
+TRANSLATOR=""
+UUID=""
+
+DEBUG=false
+FILES=""
+XTRA=""
+
+usage () {
+    cat << EOM >> /dev/stderr
+Usage: $( basename $0 ) EPUB_FILE -t "title" [OPTION]... FILE...
+
+Options:
+ -t title            Title *required*
+ -a author           Author 'First Last[|Last, First]'
+ -s subject          Subject(s)
+ -m maker            EPUB maker
+ -p publisher        Publisher
+ -x translator       Translator
+ -c cover.img        Cover image
+ -d date             First published date (ISO 8601)
+ -l lang             Language (BCP 47, default "en-US")
+ -r rights           Copyright or license, default "CC BY-SA 4.0"
+ -u UUID             Universal Unique ID
+ -b OPS              Build subdirectory (OPS or OEBPS)
+ --debug             Keep output files for debugging
+EOM
+}
+
+
+# parse arguments
+shopt -s nocasematch
+while [[ $# -ne 0 ]]
+do
+    case $1 in
+    -t)		TITLE+=("$2")		; shift ;;
+    -a)		AUTHOR+=("$2")		; shift ;;
+    -s)		SUBJECT+=("$2")		; shift ;;
+    -m)		MAKER="$2"		; shift ;;
+    -p)		PUBLISHER="$2"		; shift ;;
+    -x)		TRANSLATOR="$2"		; shift ;;
+    -c)		COVER="$2"		; shift ;;
+    -d)		DATE="$2"		; shift ;;
+    -l)		ELANG="$2"		; shift ;;
+    -r)		LICENSE="$2"		; shift ;;
+    -u)		UUID="$2"		; shift ;;
+    -b)		OPS="$2"		; shift ;;
+    --debug)	DEBUG=true			;;
+    *.epub)
+	if [[ -z "$EPUB" ]] ; then
+		EPUB="$1"
+	else
+		echo "$0: $EPUB already specified! $1" 1>&2
+		exit 1
+	fi					;;
+    *.xhtml | *.html | *.htm)
+		HTML+=("$1")			;;
+    *.jpg | *.jpeg | *.png | *.svg | *.gif)
+		IMAGE+=("$1")			;;
+    *.ttf | *.woff)
+		TTF+=("$1")			;;
+    *.css)
+		CSS+=("$1")			;;
+    *)
+		echo "$0: invalid argument $1" 1>&2
+		usage
+		exit 1				;;
+    esac
+    shift
+done
+shopt -u nocasematch
+
+{  # error checks
+    if [[ ${#HTML[@]} -eq 0 ]] ; then
+        echo "$0: No HTML files; aborting."
+        exit 2
+    elif [[ -z "$EPUB" ]] ; then
+        echo "$0: No EPUB file named; aborting."
+        exit 2
+    elif [[ -w . ]] ; then
+        rm -f ${EPUB}
+    else
+        echo "$0: No write permission in $PWD; aborting."
+        exit 3
+    fi
+} > /dev/stderr
+
+##################################################
+
+if [[ -z "$UUID" ]] ; then
+    if which uuidgen 2>&1 >/dev/null ; then
+        UUID="$(uuidgen)"
+    else
+        UUID="c5be00f9-932e-4903-8cd9-b4b5939411a6"
+    fi
+fi
+
+echo -n "application/epub+zip" > mimetype
+
+# exactly one trailing '/' please
+if [[ -n "$OPS" ]] ; then
+    OPS=$( echo ${OPS} | sed 's;/*$;/;' )
+fi
+
+mkdir -p META-INF
+{  # write META-INF/container.xml
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '  <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+echo '    <rootfiles>'
+echo '      <rootfile full-path="'${OPS}'content.opf" media-type="application/oebps-package+xml" />'
+echo '    </rootfiles>'
+echo '  </container>'
+} > META-INF/container.xml
+
+FILES="META-INF/container.xml"
+
+AUTHORMUNGE=""
+for (( c=${#AUTHOR[@]} ; $c > 0 ; ))
+do
+    let c--
+    if [[ c -gt 0 ]] ; then
+        join="${join:- and }"
+    else
+        join=""
+    fi
+    AUTHORMUNGE="${join}${AUTHOR[${c}]%|*}${AUTHORMUNGE}"
+    join=", "
+done
+
+# write titlepage.xhtml
+if [[ -r ${OPS}titlepage.xhtml ]] ; then
+    XTRA="${OPS}titlepage.xhtml"
+else
+    {
+    echo '<!DOCTYPE html>'
+    echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="'${ELANG}'">'
+    echo '<head><meta content="text/html; charset=utf-8" http-equiv="Content-Type" />'
+    echo '  <title>'${TITLE[@]} - ${AUTHORMUNGE}'</title>'
+    for f in "${CSS[@]}" ; do
+        echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
+    done
+    echo '</head><body class="titlepage">'
+
+    if [[ -n "$COVER" ]] ; then
+        echo '<!-- NNAV +cover_ Cover -->'
+        echo '<div style="margin: 2% 0%; width: 100%; text-align: center;"><img src="'${COVER#${OPS}}'" alt="'${TITLE[@]} by ${AUTHORMUNGE}'" /></div>'
+    else
+        echo '<!-- NNAV +ttpg_ Title page -->'
+        echo -e '<h1>'${TITLE[@]}'</h1>\n<h2>'${AUTHORMUNGE}'</h2>'
+    fi
+
+    echo '</body></html>'
+    } > ${OPS}titlepage.xhtml
+
+    FILES="${OPS}titlepage.xhtml ${FILES}"
+fi
+
+LIB="/home/peter/Code/aov-html2epub/scripts"
+export AWKPATH=$LIB
+
+main=$( mktemp )
+work=$( mktemp )
+
+
+if ! awk -f new.awk -- ops=$OPS "${HTML[@]}" ; then
+    echo "ttitle.awk error!" > /dev/stderr
+fi
+
+
+{  # write content.opf
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id">'
+echo '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+
+# REQUIRED
+echo '    <dc:language>'${ELANG}'</dc:language>'
+echo '    <dc:identifier id="pub-id">urn:uuid:'${UUID}'</dc:identifier>'
+date -u +'      <meta property="dcterms:modified">%FT%TZ</meta>'
+echo '    <dc:rights>'${LICENSE}'</dc:rights>'
+for f in "${TITLE[@]}" ; do
+    echo '    <dc:title>'${f}'</dc:title>'
+done
+
+c=0
+for f in "${AUTHOR[@]}" ; do
+    echo '    <dc:creator id="author'${c}'">'${f%|*}'</dc:creator>'
+    echo '      <meta property="role" refines="#author'${c}'" scheme="marc:relators">aut</meta>'
+    if echo "$f" | grep -q '|' ; then
+        echo '      <meta property="file-as" refines="#author'${c}'">'${f#*|}'</meta>'
+    fi
+    let c++
+done
+if [[ -n "$DATE" ]] ; then
+    echo '    <dc:date>'${DATE}'</dc:date>'
+fi
+if [[ -n "$TRANSLATOR" ]] ; then
+    echo '    <dc:contributor id="translator">'${TRANSLATOR}'</dc:contributor>'
+    echo '      <meta property="role" refines="#translator" scheme="marc:relators">trl</meta>'
+fi
+if [[ -n "$PUBLISHER" ]] ; then
+    echo '    <dc:publisher>'${PUBLISHER}'</dc:publisher>'
+fi
+if [[ -n "$MAKER" ]] ; then
+    echo '    <dc:contributor id="creator">'${MAKER}'</dc:contributor>'
+    echo '      <meta property="role" refines="#creator" scheme="marc:relators">bkp</meta>'
+fi
+for f in "${SUBJECT[@]}" ; do
+    echo '    <dc:subject>'${f}'</dc:subject>'
+done
+if [[ -r description ]] ; then
+    sed -e '1 s;^;    <dc:description>;' -e '$ s;$;</dc:description>\n;' description
+fi
+
+echo '    <meta name="dtb:generator" content="aov-html2epub" />'
+
+echo '  </metadata>'
+echo '  <manifest>'
+
+if [[ -n "$COVER" ]] ; then
+    echo '    <item href="'${COVER#${OPS}}'" id="cover" properties="cover-image" media-type="'$( file -b --mime-type ${COVER} )'" />'
+fi
+
+awk -f mainfest.awk $main
+# for f in "${OPS}titlepage.xhtml" "${HTML[@]}" ; do
+#     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/xhtml+xml" />'
+# done
+
+for f in "${CSS[@]}" ; do
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="text/css" />'
+done
+
+for f in "${IMAGE[@]}" ; do
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="'$( file -b --mime-type ${f} )'" />'
+done
+
+for f in "${TTF[@]}" ; do
+    echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/octet-stream" />'
+done
+
+echo '    <item href="toc.ncx" id="toc.ncx" media-type="application/x-dtbncx+xml" />'
+echo '    <item href="toc.xhtml" id="toc.xhtml" properties="nav" media-type="application/xhtml+xml" />'
+echo '  </manifest>'
+
+awk -f spine.awk $main
+
+#echo '  <spine toc="toc.ncx">'
+#
+# for f in titlepage.xhtml toc.xhtml "${HTML[@]}" ; do
+#     echo '    <itemref idref="'${f/*\//}'" />'
+# done
+# 
+# echo '  </spine>'
+
+awk -f e2_guide.awk $main
+# if [[ -s toc2_guide_TMP ]]
+# then
+#     echo '  <guide>'
+# 
+#     cat toc2_guide_TMP
+#     echo '  </guide>'
+# fi
+
+echo '</package>'
+} > ${OPS}content.opf
+
+FILES="${OPS}content.opf ${FILES}"
+
+{ # write DEPRECATED EPUB2 TOC
+awk -f e2_toc_start.awk elang="${ELANG}" uuid="${UUID}" title="${TITLE}" authormunge="${AUTHORMUNGE}" $main
+awk -f e2_toc.awk $main
+awk -f e2_pagelist.awk $main
+echo "</ncx>"
+} > ${OPS}toc.ncx
+
+
+{ # write EPUB3 NAV
+awk -f e3_toc.awk $main > ${OPS}toc.xhtml
+awk -f e3_pagelist.awk $main
+} > ${OPS}toc.xhtml
+
+
+# # write DEPRECATED EPUB2 TOC
+# exec 3> ${OPS}toc.ncx
+# # write EPUB3 NAV
+# exec 4> ${OPS}toc.xhtml
+# 
+# 
+# . toc2_dtbMeta_TMP
+# 
+# {    # BEGIN TOC PROCESSING
+# echo '<?xml version="1.0" encoding="utf-8"?>'
+# #<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+# echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
+# echo '  <head>'
+# echo '    <meta name="dtb:ui" content="'${UUID}'" />'
+# echo '    <meta name="dtb:depth" content="'${ncxvals[0]}'" />'
+# echo '    <meta name="dtb:maxPageNumber" content="'${ncxvals[1]}'" />'
+# echo '    <meta name="dtb:totalPageCount" content="'${ncxvals[2]}'" />'
+# echo '    <meta name="dtb:generator" content="aov-html2epub" />'
+# echo '  </head>'
+# echo '  <docTitle>'
+# echo '    <text>'${TITLE[@]}'</text>'
+# echo '  </docTitle>'
+# echo '  <docAuthor>'
+# echo '    <text>'${AUTHORMUNGE}'</text>'
+# echo '  </docAuthor>'
+# echo '  <navMap>'
+# 
+# cat toc2_toc_TMP
+# 
+# echo '  </navMap>'
+# } >&3
+# 
+# {
+# echo '<?xml version="1.0" encoding="utf-8"?>'
+# echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
+# echo '  xml:lang="'${ELANG}'" lang="'${ELANG}'">'
+# echo '<head>'
+# echo '  <title>'${TITLE[@]}'</title>'
+# for f in "${CSS[@]}" ; do
+#     echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
+# done
+# echo '  <meta charset="utf-8" />'
+# echo '</head>'
+# echo '<body>'
+# echo '  <section class="epub3toc" epub:type="toc">'
+# echo '    <header>'
+# echo '      <h2>Contents</h2>'
+# echo '    </header>'
+# echo '    <nav epub:type="toc" id="toc">'
+# echo '      <ol class="epub3toca">'
+# 
+# cat toc3_toc_TMP
+# 
+# echo '      </ol>'
+# echo '    </nav>'
+# echo '  </section>'
+# } >&4
+
+
+# ## EPUB PAGELISTS
+# if [[ -s toc3_pagelist_TMP ]]
+# then
+#     {
+#     echo
+#     echo '  <pageList>'
+#     echo '    <navLabel>'
+#     echo '      <text>Pages</text>'
+#     echo '    </navLabel>'
+# 
+#     cat toc2_pagelist_TMP
+# 
+#     echo '  </pageList>'
+#     } >&3
+# 
+#     {
+#     echo
+#     echo '  <section class="epub3pagelist">'
+#     echo '    <nav epub:type="page-list" hidden="">'
+#     echo '      <h2>Page list</h2>'
+#     echo '      <ol class="epub3pagelist_ol">'
+# 
+#     cat toc3_pagelist_TMP
+# 
+#     echo '      </ol>'
+#     echo '    </nav>'
+#     echo '  </section>'
+#     } >&4
+# fi
+
+# # EPUB3 LANDMARKS
+# if [[ -s toc3_lndmrk_TMP ]]
+# then
+#     echo
+#     echo '  <section class="epub3landmarks">'
+#     echo '    <nav epub:type="landmarks" hidden="">'
+#     echo '      <h2>Guide</h2>'
+#     echo '      <ol>'
+# 
+#     cat toc3_lndmrk_TMP
+# 
+#     echo '      </ol>'
+#     echo '    </nav>'
+#     echo '  </section>'
+# fi >&4
+
+# echo '</ncx>' >&3
+# 
+# {
+# echo '</body>'
+# echo '</html>'
+# } >&4
+# 
+# exec 3>&- 4>&-
+
+FILES="${OPS}toc.ncx ${OPS}toc.xhtml $FILES"
+
+# rm toc?_*_TMP
+# END TOC PROCESSING
+
+
+zip ${EPUB} -X -Z store mimetype
+zip ${EPUB} -X -9 "${TTF[@]}" "${IMAGE[@]}" "${HTML[@]}" "${CSS[@]}" ${COVER} ${XTRA} ${FILES}
+
+if ! ${DEBUG} ; then
+    rm mimetype ${FILES}
+    rmdir META-INF
+    rm $work $main
+fi
+
+exit 0
+

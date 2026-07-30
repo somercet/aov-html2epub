@@ -21,6 +21,7 @@ BEGIN {
 	body = "<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
 	tail = "</navPoint>"
 
+        print "  <navMap>"
 	printf indent(0) body, "navp" nid, nid, "Title page", "titlepage.xhtml"
 	nid++
 }
@@ -60,6 +61,7 @@ END {
 			pop()
 		else
 			print ( c++ ? indent(i) tail : tail )
+        print "  </navMap>"
 }
 
 

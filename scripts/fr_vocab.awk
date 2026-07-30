@@ -39,12 +39,15 @@ function vocab_all(e) {
 	e["frwd"] = "foreword"
 	e["impr"] = "imprimatur"
 	e["intr"] = "introduction"
+	e["part"] = "part"
 	e["prmb"] = "preamble"
 	e["prfc"] = "preface"
 	e["prlg"] = "prologue"
 	e["ttpg"] = "title-page"
 	e["volm"] = "volume"
-	e[""] = "chapter"
+	e["schp"] = "subchapter"
+	e["chap"] = "chapter"
+	e[""] = ""
 
 	vocab_landm(e)
 }

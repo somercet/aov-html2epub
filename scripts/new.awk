@@ -34,7 +34,7 @@ BEGINFILE {
 }
 
 # <!-- INAV 2+chap	1. Section One --> depth#+type
-/^!--[	\n ]+[IN]NAV[	\n ]+[0-9]*\+/ {
+/^!--[ \t\n]+[IN]NAV[ \t\n]+[0-9]*\+/ {
 	gsub(/[ \n\t]+/, " ")
 	sub(/ --$/, "")
 	if ( sub(/^!-- INAV /, "") )
