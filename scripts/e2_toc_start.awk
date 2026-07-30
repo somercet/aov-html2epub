@@ -11,8 +11,11 @@ BEGIN {
 }
 
 /^dtbPC/ {
-	print "    <meta name=\"dtb:maxPageNumber\" content=\"" $2 "\" />"
 	print "    <meta name=\"dtb:totalPageCount\" content=\"" $2 "\" />"
+}
+
+/^dtblast/ {
+	print "    <meta name=\"dtb:maxPageNumber\" content=\"" $2 "\" />"
 }
 
 END {

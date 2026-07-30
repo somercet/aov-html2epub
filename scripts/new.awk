@@ -9,6 +9,7 @@ BEGIN {
 	prev   = 0
 	dtbPC  = 0
 	dtbdep = 0
+	dtblast = ""
 
 	if ( ops ) {
 		gsub(/\/{2,}/, "/", ops)
@@ -77,14 +78,15 @@ innav && /[	\n ]+id=['"]/ {
 	sub(/.* id=['"]/, "")
 	sub(/['"].*/, "")
 
-	s = pageno($0)
-	print "page	" path "	" $0 "	" s
+	dtblast = pageno($0)
+	print "page	" path "	" $0 "	" dtblast
 	dtbPC++
 }
 
 
 END {
 	print "dtbPC	" dtbPC
+	print "dtblast	" dtblast
 	print "dtbdep	" dtbdep + 1
 }
 
