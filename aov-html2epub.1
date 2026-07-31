@@ -10,16 +10,16 @@ back-compatibility for v2
 .Ar EPUB_FILE
 .Fl t Ar title
 .Op Fl a Ar name Ns Op Ar |filebyname
+.Op Fl b Ar subdir
+.Op Fl c Ar cover.img
 .Op Fl d Ar date
-.Op Fl s Ar subject
+.Op Fl l Ar lang
 .Op Fl m Ar maker
 .Op Fl p Ar publisher
-.Op Fl x Ar translator
-.Op Fl c Ar cover.img
-.Op Fl l Ar lang
 .Op Fl r Ar rights
+.Op Fl s Ar subject
 .Op Fl u Ar uuid
-.Op Fl b Ar subdir
+.Op Fl x Ar translator
 .Op Fl -debug
 .Ar
 .Sh DESCRIPTION
@@ -120,34 +120,34 @@ with one
 per author.
 As with titles, command line order is preserved in the OPF, and the first
 author listed will be considered the primary author by many EPUB readers.
-.It Fl d Ar date
-Publishing date (ISO 8601), e.g. July 1999 is
-.Dq 1999-07
-.It Fl s Ar subject
-Subject(s), zero or more, one
-.Fl s
-per subject
-.It Fl m Ar maker
-EPUB creator
-.It Fl p Ar publisher
-Publishing house
-.It Fl x Ar translator
-Translator
-.It Fl c Ar cover.img
-Cover image
-.It Fl l Ar lang
-Language (BCP 47), default
-.Dq en-US
-.It Fl r Ar rights
-Content copyright or license, default
-.Dq CC BY-SA 4.0
-.It Fl u Ar uuid
-Universal Unique ID
 .It Fl b Ar subdir
 Build subdirectory (OPS or OEBPS).
 Strictly speaking, this means “create
 .Pa content.opf
 in this directory, and edit its relative paths to all files accordingly.”
+.It Fl c Ar cover.img
+Cover image
+.It Fl d Ar date
+Publishing date (ISO 8601), e.g. July 1999 is
+.Dq 1999-07
+.It Fl l Ar lang
+Language (BCP 47), default
+.Dq en-US
+.It Fl m Ar maker
+EPUB creator
+.It Fl p Ar publisher
+Publishing house
+.It Fl r Ar rights
+Content copyright or license, default
+.Dq CC BY-SA 4.0
+.It Fl s Ar subject
+Subject(s), zero or more, one
+.Fl s
+per subject
+.It Fl u Ar uuid
+Universal Unique ID
+.It Fl x Ar translator
+Translator
 .It Fl -debug
 Do not delete generated files
 .El
