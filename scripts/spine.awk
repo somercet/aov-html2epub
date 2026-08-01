@@ -7,6 +7,8 @@
 
 BEGIN {
 	print "  <spine toc=\"toc.ncx\">"
+	printf "    <itemref idref=\"titlepage.xhtml\" />\n", $4
+	printf "    <itemref idref=\"toc.xhtml\" />\n", $4
 }
 
 /^file/ {

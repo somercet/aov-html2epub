@@ -31,17 +31,17 @@ Usage: $( basename $0 ) EPUB_FILE -t "title" [OPTION]... FILE...
 
 Options:
  -t title            Title *required*
- -a author           Author 'First Last[|Last, First]'
- -s subject          Subject(s)
- -m maker            EPUB maker
- -p publisher        Publisher
- -x translator       Translator
+ -a author           Author "First Last[|Last, First]"
+ -b OPS              Build subdirectory (OPS or OEBPS)
  -c cover.img        Cover image
  -d date             First published date (ISO 8601)
  -l lang             Language (BCP 47, default "en-US")
+ -m maker            EPUB maker
+ -p publisher        Publisher
  -r rights           Copyright or license, default "CC BY-SA 4.0"
+ -s subject          Subject(s)
  -u UUID             Universal Unique ID
- -b OPS              Build subdirectory (OPS or OEBPS)
+ -x translator       Translator
  --debug             Keep output files for debugging
 EOM
 }
@@ -181,7 +181,7 @@ main=$( mktemp )
 work=$( mktemp )
 
 
-if ! awk -f new.awk -- ops=$OPS "${HTML[@]}" ; then
+if ! awk -v ops=${OPS} -f new.awk -- "${HTML[@]}" > $main ; then
     echo "ttitle.awk error!" > /dev/stderr
 fi
 
@@ -239,7 +239,9 @@ if [[ -n "$COVER" ]] ; then
     echo '    <item href="'${COVER#${OPS}}'" id="cover" properties="cover-image" media-type="'$( file -b --mime-type ${COVER} )'" />'
 fi
 
-awk -f mainfest.awk $main
+echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
+awk -f manifest.awk $main
+
 # for f in "${OPS}titlepage.xhtml" "${HTML[@]}" ; do
 #     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/xhtml+xml" />'
 # done
@@ -261,23 +263,7 @@ echo '    <item href="toc.xhtml" id="toc.xhtml" properties="nav" media-type="app
 echo '  </manifest>'
 
 awk -f spine.awk $main
-
-#echo '  <spine toc="toc.ncx">'
-#
-# for f in titlepage.xhtml toc.xhtml "${HTML[@]}" ; do
-#     echo '    <itemref idref="'${f/*\//}'" />'
-# done
-# 
-# echo '  </spine>'
-
 awk -f e2_guide.awk $main
-# if [[ -s toc2_guide_TMP ]]
-# then
-#     echo '  <guide>'
-# 
-#     cat toc2_guide_TMP
-#     echo '  </guide>'
-# fi
 
 echo '</package>'
 } > ${OPS}content.opf
@@ -285,7 +271,8 @@ echo '</package>'
 FILES="${OPS}content.opf ${FILES}"
 
 { # write DEPRECATED EPUB2 TOC
-awk -f e2_toc_start.awk elang="${ELANG}" uuid="${UUID}" title="${TITLE}" authormunge="${AUTHORMUNGE}" $main
+c=${TITLE[@]}
+awk -v elang="${ELANG}" -v uuid="${UUID}" -v title="$c" -v authormunge="${AUTHORMUNGE}" -f e2_toc_start.awk $main
 awk -f e2_toc.awk $main
 awk -f e2_pagelist.awk $main
 echo "</ncx>"
@@ -293,130 +280,26 @@ echo "</ncx>"
 
 
 { # write EPUB3 NAV
-awk -f e3_toc.awk $main > ${OPS}toc.xhtml
+echo '<?xml version="1.0" encoding="utf-8"?>'
+echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
+echo '  xml:lang="'${ELANG}'" lang="'${ELANG}'">'
+echo '<head>'
+echo '  <title>'${TITLE[@]}'</title>'
+for f in "${CSS[@]}" ; do
+    echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
+done
+echo '  <meta charset="utf-8" />'
+echo '</head>'
+echo '<body>'
+
+awk -f e3_toc.awk $main
 awk -f e3_pagelist.awk $main
+
+echo '</body>'
+echo '</html>'
 } > ${OPS}toc.xhtml
 
-
-# # write DEPRECATED EPUB2 TOC
-# exec 3> ${OPS}toc.ncx
-# # write EPUB3 NAV
-# exec 4> ${OPS}toc.xhtml
-# 
-# 
-# . toc2_dtbMeta_TMP
-# 
-# {    # BEGIN TOC PROCESSING
-# echo '<?xml version="1.0" encoding="utf-8"?>'
-# #<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
-# echo '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="'${ELANG}'">'
-# echo '  <head>'
-# echo '    <meta name="dtb:ui" content="'${UUID}'" />'
-# echo '    <meta name="dtb:depth" content="'${ncxvals[0]}'" />'
-# echo '    <meta name="dtb:maxPageNumber" content="'${ncxvals[1]}'" />'
-# echo '    <meta name="dtb:totalPageCount" content="'${ncxvals[2]}'" />'
-# echo '    <meta name="dtb:generator" content="aov-html2epub" />'
-# echo '  </head>'
-# echo '  <docTitle>'
-# echo '    <text>'${TITLE[@]}'</text>'
-# echo '  </docTitle>'
-# echo '  <docAuthor>'
-# echo '    <text>'${AUTHORMUNGE}'</text>'
-# echo '  </docAuthor>'
-# echo '  <navMap>'
-# 
-# cat toc2_toc_TMP
-# 
-# echo '  </navMap>'
-# } >&3
-# 
-# {
-# echo '<?xml version="1.0" encoding="utf-8"?>'
-# echo '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"'
-# echo '  xml:lang="'${ELANG}'" lang="'${ELANG}'">'
-# echo '<head>'
-# echo '  <title>'${TITLE[@]}'</title>'
-# for f in "${CSS[@]}" ; do
-#     echo '  <link rel="stylesheet" href="'${f#${OPS}}'" type="text/css" />'
-# done
-# echo '  <meta charset="utf-8" />'
-# echo '</head>'
-# echo '<body>'
-# echo '  <section class="epub3toc" epub:type="toc">'
-# echo '    <header>'
-# echo '      <h2>Contents</h2>'
-# echo '    </header>'
-# echo '    <nav epub:type="toc" id="toc">'
-# echo '      <ol class="epub3toca">'
-# 
-# cat toc3_toc_TMP
-# 
-# echo '      </ol>'
-# echo '    </nav>'
-# echo '  </section>'
-# } >&4
-
-
-# ## EPUB PAGELISTS
-# if [[ -s toc3_pagelist_TMP ]]
-# then
-#     {
-#     echo
-#     echo '  <pageList>'
-#     echo '    <navLabel>'
-#     echo '      <text>Pages</text>'
-#     echo '    </navLabel>'
-# 
-#     cat toc2_pagelist_TMP
-# 
-#     echo '  </pageList>'
-#     } >&3
-# 
-#     {
-#     echo
-#     echo '  <section class="epub3pagelist">'
-#     echo '    <nav epub:type="page-list" hidden="">'
-#     echo '      <h2>Page list</h2>'
-#     echo '      <ol class="epub3pagelist_ol">'
-# 
-#     cat toc3_pagelist_TMP
-# 
-#     echo '      </ol>'
-#     echo '    </nav>'
-#     echo '  </section>'
-#     } >&4
-# fi
-
-# # EPUB3 LANDMARKS
-# if [[ -s toc3_lndmrk_TMP ]]
-# then
-#     echo
-#     echo '  <section class="epub3landmarks">'
-#     echo '    <nav epub:type="landmarks" hidden="">'
-#     echo '      <h2>Guide</h2>'
-#     echo '      <ol>'
-# 
-#     cat toc3_lndmrk_TMP
-# 
-#     echo '      </ol>'
-#     echo '    </nav>'
-#     echo '  </section>'
-# fi >&4
-
-# echo '</ncx>' >&3
-# 
-# {
-# echo '</body>'
-# echo '</html>'
-# } >&4
-# 
-# exec 3>&- 4>&-
-
 FILES="${OPS}toc.ncx ${OPS}toc.xhtml $FILES"
-
-# rm toc?_*_TMP
-# END TOC PROCESSING
-
 
 zip ${EPUB} -X -Z store mimetype
 zip ${EPUB} -X -9 "${TTF[@]}" "${IMAGE[@]}" "${HTML[@]}" "${CSS[@]}" ${COVER} ${XTRA} ${FILES}

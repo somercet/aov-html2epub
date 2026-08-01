@@ -25,8 +25,14 @@ BEGIN {
 	prev = 0
 	oltrack = 1
 
-	print  "    " "<ol class=\"epub3toca\">"
-	printf ind[0] "<li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"
+	print "  <section class=\"epub3toc\" epub:type=\"toc\">"
+	print "    <header>"
+	print "      <h2>Contents</h2>"
+	print "    </header>"
+	print "    <nav epub:type=\"toc\" id=\"toc\">"
+	print "    <ol class=\"epub3toca\">"
+	printf ind[0] "<li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a></li>\n"
+	printf ind[0] "<li><a epub:type=\"toc\" href=\"toc.xhtml\">Table of Contents</a>"
 }
 
 /^[in]nav/ {
@@ -49,8 +55,12 @@ BEGIN {
 
 	sub(/^([[:digit:]]+|[[:alpha:]][[:digit:]]*|[ivxlcdm]+|[IVXLCDM]+)\. +/, "", $6)
 
-	printf "<a epub:type=\"%s\" href=\"%s\">%s</a>", \
-		etAbbr[$4], $2 anchor, $6
+	if ( $4 )
+		etype = " epub:type=\"" etAbbr[$4] "\""
+	else
+		etype = ""
+	printf "<a%s href=\"%s\">%s</a>", \
+		etype, $2 anchor, $6
 	prev = $3
 }
 
@@ -58,5 +68,8 @@ END {
 	for ( i = prev; i > 0; )
 		closer(--i)
 	print "</li>\n    </ol>"
+#	print "      </ol>"
+	print "    </nav>"
+	print "  </section>"
 }
 

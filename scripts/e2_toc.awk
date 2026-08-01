@@ -17,12 +17,15 @@ BEGIN {
 	nid = 1
 	sp = 0	# stack pointer
 
-	ind[0] = "      "
-	body = "<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
+	ind[0] = "    "
+	body = "%s<navPoint id=\"%s\" playOrder=\"%s\"><navLabel><text>%s</text></navLabel><content src=\"%s\" />"
 	tail = "</navPoint>"
 
         print "  <navMap>"
-	printf indent(0) body, "navp" nid, nid, "Title page", "titlepage.xhtml"
+	printf body, indent(0), "navp" nid, nid, "Title page", "titlepage.xhtml"
+	print ""
+	nid++
+	printf body, indent(0), "navp" nid, nid, "Table of Contents", "toc.xhtml"
 	nid++
 }
 
@@ -48,7 +51,7 @@ BEGIN {
 	else
 		print tail
 
-	printf indent($3) body, "navp" nid, nid, $6, $2 s
+	printf body, indent($3), "navp" nid, nid, $6, $2 s
 	nid++
 
 	prev = $3
@@ -56,7 +59,7 @@ BEGIN {
 
 END {
 	c = 0
-	for ( i = prev - 1; i >= 0; i-- )
+	for ( i = prev + 1; i >= 0; i-- )
 		if ( peek() == i )
 			pop()
 		else
