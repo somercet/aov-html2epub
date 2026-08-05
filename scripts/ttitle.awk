@@ -1,240 +1,95 @@
-#! /usr/bin/env -S gawk -f
+# AWKPATH=~/Code/aov-html2epub/scripts awk -f e3_toc.awk -v 'ops=OPS' ff | less
 
+@include "fr_page.awk"
 
 BEGIN {
+	RS = ">[^<]*<"
+	innav_ln = ""
+	innav  = 0
+	prev   = 0
+	dtbPC  = 0
+	dtbdep = 0
+	dtblast = ""
 
-RS=">[^<]*<"
-
-e2tocpf = \
-	"%s    <navPoint id=\"%s\" playOrder=\"%d\">\n"  \
-	"%s      <navLabel><text>%s</text></navLabel>\n" \
-	"%s      <content src=\"%s\" />\n"
-
-e3tocpf = "%s        <li><a epub:type=\"%s\" href=\"%s\">%s</a>"
-
-#no toc/loi/lot cover part/notes/index text/bodymatter
-etAbbr["ackn"] = "acknowledgements"
-etAbbr["afwd"] = "afterword"
-etAbbr["apdx"] = "appendix"
-etAbbr["bibl"] = "bibliography"
-etAbbr["clpn"] = "colophon"
-etAbbr["cntr"] = "contributors"
-etAbbr["cprt"] = "copyright-page"
-etAbbr["dedi"] = "dedication"
-etAbbr["epgr"] = "epigraph"
-etAbbr["eplg"] = "epilogue"
-etAbbr["errt"] = "errata"
-etAbbr["ftns"] = "footnotes"
-etAbbr["frwd"] = "foreword"
-etAbbr["glss"] = "glossary"
-etAbbr["intr"] = "introduction"
-etAbbr["prmb"] = "preamble"
-etAbbr["prfc"] = "preface"
-etAbbr["prlg"] = "prologue"
-etAbbr["ttpg"] = "title-page"
-etAbbr["volm"] = "volume"
-
-ogap	= ""
-count	= 2
-onest	= 0
-oltrack	= 1
-e3toc	= "toc3_toc_TMP"
-e3pl	= "toc3_pagelist_TMP"
-e3ldmrk	= "toc3_lndmrk_TMP"
-
-e2toc	= "toc2_toc_TMP"
-e2pl	= "toc2_pagelist_TMP"
-e2guide = "toc2_guide_TMP"
-e2dtb	= "toc2_dtbMeta_TMP"
-
-e3loi	= "toc3_loi_TMP"
-e3lot	= "toc3_lot_TMP"
-
-dtbdepth = 0
-dtbtPC = 0
-
-
-	printf	"    <navPoint id=\"titlepage.xhtml\" playOrder=\"1\">\n"	\
-		"      <navLabel><text>Title page</text></navLabel>\n"	\
-		"      <content src=\"titlepage.xhtml\" />\n"		\
-		> e2toc
-
-	printf	"        <li><a epub:type=\"titlepage\" href=\"titlepage.xhtml\">Cover</a>"	\
-		> e3toc
 	if ( ops ) {
-		sub(/\/+$/,  "", ops)
-		sub(/^/,    "/", ops)
-		sub(/$/, "\\//", ops)
+		gsub(/\/{2,}/, "/", ops)
+		sub(/^\.\//, "",  ops)
+		sub(/\/$/, "", ops)
 	}
+	print "ops	" ops
 }
 
 BEGINFILE {
-	ttout = 0
-	ttresult = 0
-	fn = FILENAME
-	lndmrk = 0
+	file = FILENAME
+	sub(/.*\//, "", file)
+	path = FILENAME
 	if ( ops )
-		sub(ops, "", fn)
-	fnID = fn
-#	gsub(/[^[:alnum:]]/, "", fnID)
-	sub(/.*\//, "", fnID)
+		sub(ops "/", "", path)
+	fid = path
+	gsub(/\//, "_", fid)
+
+	if ( fid ~ /^[A-Za-z][A-Za-z0-9_:\.-]*$/ )
+		print "file	" FILENAME "	" path "	" fid
+	else
+		print("Warning: illegal XHTML ID chars in '" FILENAME "'.") > "/dev/stderr"
 }
 
-# NNAV [1,2,3...]+[epubtype] Chap title
-# NNAV loi #illos01 My butt
-
-/^!--[	\n ]+NNAV[	\n ]+[0-9]*\+/ {
-	if ( ttout == 0 )
-		ttout++
-	else
-		next
-
+# <!-- INAV 2+chap	1. Section One --> depth#+type
+/^!--[ \t\n]+[IN]NAV[ \t\n]+[0-9]*\+/ {
 	gsub(/[ \n\t]+/, " ")
 	sub(/ --$/, "")
-	sub(/^!-- NNAV \+/, "0+")
-	sub(/^!-- NNAV /, "")
-	sub(/\+/, "	")
-	sub(/ /, "	")
-
-
-	ttresult = split($0, parts, /	/)
-	if ( dtbdepth < parts[1] )
-		dtbdepth = parts[1]
-
-	if ( parts[3] ~ /[><"]/ ) {
-		gsub(/</, "&lt;", parts[3])
-		gsub(/>/, "&gt;", parts[3])
-		gsub(/"/, "&quot;", parts[3])
+	if ( sub(/^!-- INAV /, "") )
+		innav = 1
+	else {
+		sub(/^!-- NNAV /, "")
 	}
+	sub(/^\+/, "0+")
+	sub(/+/, "	")
 
-	if ( onest >= parts[1] ) {
-		printf "%s    </navPoint>\n", ogap > e2toc
+	split($0, parts, /	/)
+	if ( parts[1] ~ /[^[:digit:]]/ )
+		print "Warning: '" FILENAME "':" NR " depth not an ASCII digit: '" $0 "'" > "/dev/stderr"
+	prev = parts[1]
 
-		printf "</li>\n" > e3toc
+	if ( dtbdep < parts[1] )
+		dtbdep = parts[1]
+
+	sub(/^/, "nnav	" path "	")
+
+	if (innav)
+		innav_ln = $0
+	else {
+		sub(/ /, "		")
+		print
 	}
-
-	for ( ; onest > parts[1] ; onest-- ) {
-		printf "%s  </navPoint>\n", ogap > e2toc
-
-		printf	"%s        </ol>\n"	\
-			"%s      </li>\n", ogap, ogap > e3toc
-		sub(/  /, "", ogap)
-	}
-
-	ngap = sprintf("%*s",  parts[1] * 2, "")
-
-	for ( ; onest < parts[1] ; onest++ ) {
-		#echo > e2toc
-
-		printf "\n%s        <ol class=\"epub3toc%c epub3toc%d\">\n", \
-			ngap, 97 + parts[1], oltrack++ > e3toc
-	}
-
-	if ( parts[2] ~ /_$/ ) {
-		sub(/_$/, "", parts[2])
-		lndmrk = 1
-	}
-
-	if ( ! parts[2] )
-		parts[2] = "chapter"
-
-	if ( parts[2] in etAbbr )
-		epbType = etAbbr[parts[2]]
-	else
-		epbType = parts[2]
-
-	printf e2tocpf, ngap, fnID, count,	\
-			ngap, parts[3],		\
-			ngap, fn		> e2toc
-
-	temp = parts[3]
-	if ( epbType == "text" )
-		temp = "Start of text"
-
-	if ( lndmrk ) {
-		printf "    <reference href=\"%s\" type=\"%s\" title=\"%s\" />\n",	\
-			fn, epbType, temp > e2guide
-	}
-
-	if ( epbType == "text" )
-		epbType = "bodymatter"
-
-	if ( lndmrk ) {
-		printf	"        <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
-			fn, epbType, temp > e3ldmrk
-	}
-
-	sub(/^([0-9]+|[ivxlcdm]+|[IVXLCDM]+|[A-Za-z]+)\. +/, "", parts[3])
-
-	printf e3tocpf, ngap, epbType, fn, parts[3] > e3toc
-
-	ogap = ngap
-	onest = parts[1]
-	count++
-	next
 }
 
+innav && /[	\n ]+id=['"]/ {
+	sub(/.*[	\n ]+id=['"]/, "")
+	sub(/['"].*/, "")
 
-/^!--[	 ]+NNAV/ {
-	gsub(/[ \n	]+/, " ")
-	sub(/ --$/, "")
-	sub(/^!-- +NNAV /, "")
-	#GUIDE / LANDMARKS
-#	if ( epbType ) {
-#		printf	"    <reference href=\"%s\" type=\"%s\" title=\"%s\" />\n",	\
-#			fn, epbType, epName > e2guide
-#
-#		printf	"      <li><a href=\"%s\" epub:type=\"%s\">%s</a></li>\n",	\
-#			fn, epbType, epName > e3ldmrk
-#	}
+	sub(/ /, "	" $0 "	", innav_ln)
+	print innav_ln
+	innav = 0
+	innav_ln = ""
 }
-
 
 /epub:type=['"]pagebreak/ {
 	sub(/.* id=['"]/, "")
-	sub(/['"].*/, "")	# pageid
-	pagenum = $0
-	sub(/[pPaAgGeE]+[-_]*/, "", pagenum)
+	sub(/['"].*/, "")
 
-	printf	"    <pageTarget type=\"normal\" id=\"%s\" value=\"%s\">\n"	\
-		"      <navLabel><text>%s</text></navLabel>\n"		\
-		"      <content src=\"%s#%s\"/>\n"			\
-		"    </pageTarget>\n",					\
-		$0, pagenum, pagenum, fn, $0 > e2pl
-
-	printf	"        <li><a href=\"%s#%s\">%s</a></li>\n", fn, $0, pagenum > e3pl
-	dtbtPC++
-}
-
-
-ENDFILE {
-	if ( ttresult < 2 || ttout == 0 ) {
-		printf "%s    </navPoint>\n" e2tocpf, \
-			ogap,			\
-			ogap, fnID, count,	\
-			ogap, count,		\
-			ogap, fn		> e2toc
-
-		printf "</li>\n" e3tocpf, ogap, "chapter", fn, count++ > e3toc
-	}
+	dtblast = pageno($0)
+	print "page	" path "	" $0 "	" dtblast
+	dtbPC++
 }
 
 
 END {
-	printf "ncxvals=(%d %d %d)\n", dtbdepth + 1, pagenum, dtbtPC > e2dtb
-
-	printf "</li>\n" > e3toc
-	for ( ; onest > 0 ; onest-- ) {
-		printf	"%s    </navPoint>\n", ogap > e2toc
-
-		printf	"%s        </ol>\n"	\
-			"%s      </li>\n", ogap, ogap > e3toc
-		sub(/  /, "", ogap)
-	}
-	printf "    </navPoint>\n" > e2toc
+	print "dtbPC	" dtbPC
+	print "dtblast	" dtblast
+	print "dtbdep	" dtbdep + 1
 }
 
 # HTML 4.01 and XHTML IDs: [A-Za-z][A-Za-z0-9-_:\.]*
-# https://www.w3.org/TR/xhtml1/#C_8
 # HTML5 IDs: unique in the document; no spaces; at least one char
 

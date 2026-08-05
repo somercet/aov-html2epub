@@ -7,7 +7,7 @@
 #
 # Public domain
 
-LIB="$HOME/bin/epub3"
+export AWKPATH=".:$HOME/bin/epub3"
 
 declare -a AUTHOR SUBJECT TITLE CSS HTML IMAGE TTF
 
@@ -177,14 +177,11 @@ else
     FILES="${OPS}titlepage.xhtml ${FILES}"
 fi
 
-LIB="/home/peter/Code/aov-html2epub/scripts"
-export AWKPATH=$LIB
-
 main=$( mktemp )
 work=$( mktemp )
 
 
-if ! awk -v ops=${OPS} -f new.awk -- "${HTML[@]}" > $main ; then
+if ! awk -v ops=${OPS} -f ttitle.awk -- "${HTML[@]}" > $main ; then
     echo "ttitle.awk error!" > /dev/stderr
 fi
 
