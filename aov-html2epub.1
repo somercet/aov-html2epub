@@ -13,6 +13,7 @@ back-compatibility for v2
 .Op Fl b Ar subdir
 .Op Fl c Ar cover.img
 .Op Fl d Ar date
+.Op Fl i Ar index
 .Op Fl l Ar lang
 .Op Fl m Ar maker
 .Op Fl p Ar publisher
@@ -130,6 +131,9 @@ Cover image
 .It Fl d Ar date
 Publishing date (ISO 8601), e.g. July 1999 is
 .Dq 1999-07
+.It Fl i
+Strip prefixes (alpha/numeric, Roman numerals) from the tox.xhtml entries so the OL
+prefixes can be used.
 .It Fl l Ar lang
 Language (BCP 47), default
 .Dq en-US

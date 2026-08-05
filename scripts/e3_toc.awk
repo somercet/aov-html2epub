@@ -53,7 +53,8 @@ BEGIN {
 		printf "</li>\n" indent($3) "<li>"
 	}
 
-	sub(/^([[:digit:]]+|[[:alpha:]][[:digit:]]*|[ivxlcdm]+|[IVXLCDM]+)\. +/, "", $6)
+	if ( strip_li_nos )
+		sub(/^([[:digit:]]+|[[:alpha:]][[:digit:]]*|[ivxlcdm]+|[IVXLCDM]+)\. +/, "", $6)
 
 	if ( $4 )
 		etype = " epub:type=\"" etAbbr[$4] "\""

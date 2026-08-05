@@ -9,7 +9,7 @@ BEGIN {
 	entry = "        <li><a epub:type=\"%s\" href=\"%s\">%s</a></li>\n"
 
 	print "  <section class=\"epub3landmarks\">"
-	print "    <nav epub:type=\"landmarks\" hidden=\"hidden\">"
+	print "    <nav epub:type=\"landmarks\" hidden=\"\">"
 	print "      <h2>Guide</h2>"
 	print "      <ol>"
 }

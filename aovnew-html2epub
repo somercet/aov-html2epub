@@ -20,6 +20,7 @@ MAKER=""
 PUBLISHER=""
 TRANSLATOR=""
 UUID=""
+STRIPPREFIXES=0
 
 DEBUG=false
 FILES=""
@@ -35,6 +36,7 @@ Options:
  -b OPS              Build subdirectory (OPS or OEBPS)
  -c cover.img        Cover image
  -d date             First published date (ISO 8601)
+ -i                  Strip prefixes from v3 Table of Contents
  -l lang             Language (BCP 47, default "en-US")
  -m maker            EPUB maker
  -p publisher        Publisher
@@ -64,6 +66,7 @@ do
     -r)		LICENSE="$2"		; shift ;;
     -u)		UUID="$2"		; shift ;;
     -b)		OPS="$2"		; shift ;;
+    -i)		STRIPPREFIXES=1			;;
     --debug)	DEBUG=true			;;
     *.epub)
 	if [[ -z "$EPUB" ]] ; then
@@ -274,6 +277,7 @@ FILES="${OPS}content.opf ${FILES}"
 c=${TITLE[@]}
 awk -v elang="${ELANG}" -v uuid="${UUID}" -v title="$c" -v authormunge="${AUTHORMUNGE}" -f e2_toc_start.awk $main
 awk -f e2_toc.awk $main
+echo
 awk -f e2_pagelist.awk $main
 echo "</ncx>"
 } > ${OPS}toc.ncx
@@ -292,8 +296,10 @@ echo '  <meta charset="utf-8" />'
 echo '</head>'
 echo '<body>'
 
-awk -f e3_toc.awk $main
+awk -v strip_li_nos=${STRIPPREFIXES} -f e3_toc.awk $main
 awk -f e3_pagelist.awk $main
+echo
+awk -f e3_landmark.awk $main
 
 echo '</body>'
 echo '</html>'
@@ -305,9 +311,8 @@ zip ${EPUB} -X -Z store mimetype
 zip ${EPUB} -X -9 "${TTF[@]}" "${IMAGE[@]}" "${HTML[@]}" "${CSS[@]}" ${COVER} ${XTRA} ${FILES}
 
 if ! ${DEBUG} ; then
-    rm mimetype ${FILES}
+    rm mimetype ${FILES} $work $main
     rmdir META-INF
-    rm $work $main
 fi
 
 exit 0
