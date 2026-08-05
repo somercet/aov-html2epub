@@ -13,7 +13,7 @@ back-compatibility for v2
 .Op Fl b Ar subdir
 .Op Fl c Ar cover.img
 .Op Fl d Ar date
-.Op Fl i Ar index
+.Op Fl i
 .Op Fl l Ar lang
 .Op Fl m Ar maker
 .Op Fl p Ar publisher
@@ -121,19 +121,25 @@ with one
 per author.
 As with titles, command line order is preserved in the OPF, and the first
 author listed will be considered the primary author by many EPUB readers.
-.It Fl b Ar subdir
-Build subdirectory (OPS or OEBPS).
-Strictly speaking, this means “create
+.It Fl b Ar OPS
+Build in subdirectory
+.Po Pa OPS
+or
+.Pa OEBPS
+.Pc .
+Briefly, this means “create
 .Pa content.opf
-in this directory, and edit its relative paths to all files accordingly.”
+and the two Table of Contents files in this directory, and edit all relative
+file paths therein accordingly.”
 .It Fl c Ar cover.img
 Cover image
 .It Fl d Ar date
 Publishing date (ISO 8601), e.g. July 1999 is
 .Dq 1999-07
 .It Fl i
-Strip prefixes (alpha/numeric, Roman numerals) from the tox.xhtml entries so the OL
-prefixes can be used.
+Strip prefixes (alpha/numeric, Roman numerals) from the
+.Pa tox.xhtml
+entries so the OL prefixes can be used.
 .It Fl l Ar lang
 Language (BCP 47), default
 .Dq en-US
@@ -245,8 +251,8 @@ Some four-letter abbreviations are supported:
 .It ackn	cntr	errt	loi	text
 .It afwd	cprt	ftns	lot	ttpg
 .It apdx	dedi	frwd	prmb	volm
-.It bibl	epgr	glss	prfc
-.It clpn	eplg	intr	prlg
+.It bibl	epgr	glss	prfc	
+.It clpn	eplg	intr	prlg	
 .El
 .Ed
 .Pp
