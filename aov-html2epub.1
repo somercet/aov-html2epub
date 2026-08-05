@@ -235,26 +235,20 @@ Each nesting number can contain an
 e.g.,
 .Dq Li +epigraph
 or
-.Dq Li 1+introduction_ .
-This type will be added to EPUB3 TOC and, if it ends with an underscore,
-to the Landmarks NAV element and the EPUB2 Guide element.
+.Dq Li 1+introduction .
+This type will be added to EPUB3 TOC, and the following to the Landmarks NAV
+element/EPUB2 Guide element: appendix; bibliography; endnotes; errata;
+footnotes; glossary; text; list of illustrations; list of tables.
 Some four-letter abbreviations are supported:
 .Bd -ragged -offset indent -compact
 .Bl -column xxxx xxxx xxxx xxxx xxxx
-.It ackn	clpn	epgr	frwd	prfc
-.It afwd	cntr	eplg	glss	prlg
-.It apdx	cprt	errt	intr	ttpg
-.It bibl	dedi	ftns	prmb	volm
+.It ackn	cntr	errt	loi	text
+.It afwd	cprt	ftns	lot	ttpg
+.It apdx	dedi	frwd	prmb	volm
+.It bibl	epgr	glss	prfc
+.It clpn	eplg	intr	prlg
 .El
 .Ed
-.Pp
-.Dq Li text
-is special.
-In EPUB2, it tells the reader that the actual book text starts there.
-If specified, it is copied to
-.Dq Li bodymatter ,
-the v3 equivalent.
-It still needs a trailing underscore to be included in the Guide/Landmarks.
 .Pp
 EPUB2 and 3 page lists are also supported.
 .Nm
