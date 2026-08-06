@@ -240,11 +240,8 @@ if [[ -n "$COVER" ]] ; then
 fi
 
 echo '    <item href="titlepage.xhtml" id="titlepage.xhtml" media-type="application/xhtml+xml" />'
-awk -f manifest.awk $main
 
-# for f in "${OPS}titlepage.xhtml" "${HTML[@]}" ; do
-#     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="application/xhtml+xml" />'
-# done
+awk -f manifest.awk $main
 
 for f in "${CSS[@]}" ; do
     echo '    <item href="'${f#${OPS}}'" id="'${f##*/}'" media-type="text/css" />'
