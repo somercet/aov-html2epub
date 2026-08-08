@@ -291,6 +291,7 @@ echo '</head>'
 echo '<body>'
 
 awk -v strip_li_nos=${STRIPPREFIXES} -f e3_toc.awk $main
+echo
 awk -f e3_pagelist.awk $main
 echo
 awk -f e3_landmark.awk $main
