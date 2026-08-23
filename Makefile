@@ -20,7 +20,7 @@ uninstall:
 
 $(pfix)/bin/$(PROJ): $(PROJ)
 	install -D $<	$@
-	sed -i -e 's;.HOME/bin/epub3;$(pfix)/libexec/$(PROJ);' $@
+	sed -i -e 's;.HOME/bin/epub3;$(PREFIX)/libexec/$(PROJ);' $@
 
 $(libdir)/%.awk: scripts/%.awk
 	install -D -m 0644 $<	$@

@@ -4,15 +4,18 @@
 @include "fr_vocab.awk"
 
 BEGIN {
+	c = 0
 	FS = "	"
 	vocab_landm(etAbbr)
 	vocab_long(etLong)
 	format = "  <reference type=\"%s\" href=\"%s\" title=\"%s\" />\n"
-
-	print "<guide>"
 }
 
 /^(nnav|lloi|llot|ttoc)/ && etAbbr[$4] {
+	if (! c)
+		print "<guide>"
+	c++
+
 	if ($5)
 		anchor = "#" $5
 	else
@@ -22,7 +25,8 @@ BEGIN {
 }
 
 END {
-	print "</guide>"
+	if (c)
+		print "</guide>"
 }
 
 # "loi", "content.html#loi", "List of Illustrations"

@@ -182,7 +182,8 @@ work=$( mktemp )
 
 
 if ! awk -v ops=${OPS} -f ttitle.awk -- "${HTML[@]}" > $main ; then
-    echo "ttitle.awk error!" > /dev/stderr
+    echo "$0: ttitle.awk error!" > /dev/stderr
+    exit 1
 fi
 
 
